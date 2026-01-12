@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import logoImage from 'figma:asset/aadf402f3cd19f8e27a3dc2fcf75fe8a4c96091f.png';
+import logoImage from '../assets/bluebolt.png';
 import { 
   LayoutDashboard, 
   Building2, 
