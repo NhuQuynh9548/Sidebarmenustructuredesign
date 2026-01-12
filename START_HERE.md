@@ -18,6 +18,7 @@ Chào mừng bạn đến với BlueBolt Management System!
 | `HUONG_DAN_KET_NOI_SUPABASE.md` | Hướng dẫn chi tiết từng bước với troubleshooting |
 | `DATABASE_SETUP.md` | Hướng dẫn setup Postgres Database (tùy chọn) |
 | `supabase_schema.sql` | File SQL để tạo tables trong Supabase (tùy chọn) |
+| `TEST_CONNECTION.md` | Hướng dẫn test kết nối Supabase |
 | `.env.example` | Template file cấu hình (copy thành `.env`) |
 | `deploy-edge-function.sh` | Script tự động deploy (macOS/Linux) |
 | `deploy-edge-function.bat` | Script tự động deploy (Windows) |
@@ -37,14 +38,34 @@ Chào mừng bạn đến với BlueBolt Management System!
    ↓
 5. npm install && npm run dev
    ↓
-6. Đăng nhập với tài khoản demo và test
+6. Test kết nối tại http://localhost:5173/test-connection
+   ↓
+7. Đăng nhập với tài khoản demo và sử dụng
 ```
+
+## Test Kết Nối
+
+Sau khi setup xong, test kết nối:
+
+### Cách 1: Dùng Trang Test (Khuyến Nghị)
+```bash
+npm run dev
+```
+Truy cập: `http://localhost:5173/test-connection`
+
+### Cách 2: Dùng cURL
+```bash
+curl https://YOUR_PROJECT_ID.supabase.co/functions/v1/make-server-393f5b29/health
+```
+
+Xem chi tiết: [TEST_CONNECTION.md](./TEST_CONNECTION.md)
 
 ## Cần Hỗ Trợ?
 
 - Lỗi kết nối? → Xem phần "Xử Lý Lỗi" trong `HUONG_DAN_KET_NOI_SUPABASE.md`
 - Không biết bắt đầu từ đâu? → Đọc `QUICK_START_SUPABASE.md`
 - Muốn hiểu chi tiết? → Đọc `HUONG_DAN_KET_NOI_SUPABASE.md`
+- Muốn test kết nối? → Đọc `TEST_CONNECTION.md`
 
 ## Tài Khoản Demo
 
