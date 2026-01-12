@@ -104,14 +104,24 @@ const transformTransactionFromDB = (txn: any) => {
     id: txn.id,
     transactionCode: txn.transaction_code,
     transactionDate: txn.transaction_date,
+    transactionType: txn.type,
     type: txn.type,
     businessUnit: txn.business_unit,
     category: txn.category,
-    amount: txn.amount,
-    description: txn.description,
-    partnerName: txn.partner_name,
+    amount: parseFloat(txn.amount) || 0,
+    description: txn.description || '',
+    objectName: txn.object_name,
+    objectType: txn.object_type || 'partner',
+    partnerName: txn.object_name,
     paymentMethod: txn.payment_method,
-    status: txn.status,
+    paymentStatus: txn.payment_status || 'unpaid',
+    approvalStatus: txn.approval_status || 'draft',
+    status: txn.payment_status || 'unpaid',
+    project: txn.project_code,
+    costAllocation: txn.cost_allocation || 'direct',
+    allocationRule: txn.allocation_rule,
+    attachments: txn.attachments_count || 0,
+    rejectionReason: txn.rejection_reason,
     createdBy: txn.created_by,
     createdAt: txn.created_at,
     updatedAt: txn.updated_at,
@@ -128,11 +138,18 @@ const transformTransactionToDB = (txn: any) => {
   if (txn.category !== undefined) dbData.category = txn.category;
   if (txn.amount !== undefined) dbData.amount = txn.amount;
   if (txn.description !== undefined) dbData.description = txn.description;
-  if (txn.partnerName !== undefined) dbData.partner_name = txn.partnerName;
-  if (txn.objectName !== undefined) dbData.partner_name = txn.objectName;
+  if (txn.objectName !== undefined) dbData.object_name = txn.objectName;
+  if (txn.partnerName !== undefined) dbData.object_name = txn.partnerName;
+  if (txn.objectType !== undefined) dbData.object_type = txn.objectType;
   if (txn.paymentMethod !== undefined) dbData.payment_method = txn.paymentMethod;
-  if (txn.status !== undefined) dbData.status = txn.status;
-  if (txn.paymentStatus !== undefined) dbData.status = txn.paymentStatus;
+  if (txn.paymentStatus !== undefined) dbData.payment_status = txn.paymentStatus;
+  if (txn.status !== undefined) dbData.payment_status = txn.status;
+  if (txn.approvalStatus !== undefined) dbData.approval_status = txn.approvalStatus;
+  if (txn.project !== undefined) dbData.project_code = txn.project;
+  if (txn.costAllocation !== undefined) dbData.cost_allocation = txn.costAllocation;
+  if (txn.allocationRule !== undefined) dbData.allocation_rule = txn.allocationRule;
+  if (txn.attachments !== undefined) dbData.attachments_count = txn.attachments;
+  if (txn.rejectionReason !== undefined) dbData.rejection_reason = txn.rejectionReason;
   if (txn.createdBy !== undefined) dbData.created_by = txn.createdBy;
   return dbData;
 };
