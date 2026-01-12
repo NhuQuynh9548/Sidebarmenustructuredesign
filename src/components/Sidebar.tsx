@@ -144,12 +144,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           path: '/master/thanh-toan'
         }
       ]
-    },
-    {
-      id: 'settings',
-      label: 'Cài Đặt',
-      icon: <Settings className="w-5 h-5" />,
-      path: '/settings'
     }
   ];
 

@@ -21,7 +21,6 @@ import { QuanLyDuAn } from './components/pages/master/QuanLyDuAn';
 import { CapBacNhanSu } from './components/pages/master/CapBacNhanSu';
 import { ChuyenMonVaiTro } from './components/pages/master/ChuyenMonVaiTro';
 import { PhuongThucThanhToan } from './components/pages/master/PhuongThucThanhToan';
-import { Settings } from './components/pages/Settings';
 import TestConnection from './components/pages/TestConnection';
 
 function AppLayout() {
@@ -59,9 +58,6 @@ function AppLayout() {
             <Route path="/master/cap-bac" element={<CapBacNhanSu />} />
             <Route path="/master/chuyen-mon" element={<ChuyenMonVaiTro />} />
             <Route path="/master/thanh-toan" element={<PhuongThucThanhToan />} />
-            
-            {/* Settings Route */}
-            <Route path="/settings" element={<Settings />} />
 
             {/* Test Connection Route */}
             <Route path="/test-connection" element={<TestConnection />} />
