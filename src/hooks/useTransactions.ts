@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { transactionsAPI } from '../services/api';
+import { transactionsAPI } from '../services/supabaseApi';
 
 interface Transaction {
   id: string;

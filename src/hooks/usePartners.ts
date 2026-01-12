@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { partnersAPI } from '../services/api';
+import { partnersAPI } from '../services/supabaseApi';
 
 interface Partner {
   id: string;

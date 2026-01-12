@@ -3,7 +3,7 @@ import { Building2, Plus, Search, Edit, Trash2, Filter, X, RotateCcw, Loader } f
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useDraggableColumns, DraggableColumnHeader, ColumnConfig } from '../hooks/useDraggableColumns';
-import { businessUnitsAPI } from '../../services/api';
+import { businessUnitsAPI } from '../../services/supabaseApi';
 
 interface BUData {
   id: string;

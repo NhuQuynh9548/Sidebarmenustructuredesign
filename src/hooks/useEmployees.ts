@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { employeesAPI } from '../services/api';
+import { employeesAPI } from '../services/supabaseApi';
 
 interface Employee {
   id: string;

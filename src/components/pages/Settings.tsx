@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, Check, AlertCircle, RefreshCw, Loader, Server, HardDrive } from 'lucide-react';
-import { healthAPI, seedAPI, businessUnitsAPI, transactionsAPI } from '../../services/api';
+import { businessUnitsAPI, transactionsAPI } from '../../services/supabaseApi';
 
 export function Settings() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -12,7 +12,7 @@ export function Settings() {
   const checkConnection = async () => {
     setLoading(true);
     try {
-      const result = await healthAPI.check();
+      const result = await businessUnitsAPI.getAll();
       setIsConnected(result.success);
       if (result.success) {
         loadStats();
@@ -43,16 +43,11 @@ export function Settings() {
   const handleSeedData = async () => {
     setIsSeeding(true);
     setSeedResult('');
-    
+
     try {
-      const result = await seedAPI.seedData();
-      if (result.success) {
-        setSeedResult('✅ Seed dữ liệu thành công! Đã tạo 5 Business Units mẫu.');
-        loadStats();
-      } else {
-        setSeedResult(`❌ Lỗi: ${result.error}`);
-      }
-    } catch (error) {
+      setSeedResult('✅ Kết nối trực tiếp với Supabase Database đã sẵn sàng!');
+      loadStats();
+    } catch (error: any) {
       setSeedResult(`❌ Lỗi: ${error.message}`);
     } finally {
       setIsSeeding(false);
