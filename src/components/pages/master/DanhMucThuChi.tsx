@@ -416,7 +416,7 @@ export function DanhMucThuChi() {
                   <span className="font-semibold">Tên:</span> {deletingCategory.name}
                 </p>
                 <p className="text-sm text-gray-700">
-                  <span className="font-semibold">Giao dịch liên kết:</span> {deletingCategory.transactionCount}
+                  
                 </p>
               </div>
 
