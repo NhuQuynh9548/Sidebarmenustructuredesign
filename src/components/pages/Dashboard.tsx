@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Percent, Eye, X, BarChart3, Filter, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Percent, Eye, X, ChartBar as BarChart3, ListFilter as Filter, Calendar } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useApp } from '../../contexts/AppContext';
 import { dashboardAPI } from '../../services/supabaseApi';
