@@ -425,6 +425,21 @@ export const transactionsAPI = {
   create: async (payload: any): Promise<ApiResponse> => {
     try {
       const dbPayload = transformTransactionToDB(payload);
+
+      // Generate transaction code using database function
+      const transactionType = dbPayload.type || payload.transactionType || 'income';
+      const transactionDate = dbPayload.transaction_date || payload.transactionDate || new Date().toISOString().split('T')[0];
+
+      const { data: codeData, error: codeError } = await supabase.rpc('generate_transaction_code', {
+        p_type: transactionType,
+        p_date: transactionDate
+      });
+
+      if (codeError) throw codeError;
+
+      // Set the generated transaction code
+      dbPayload.transaction_code = codeData;
+
       const { data, error } = await supabase
         .from('transactions')
         .insert([dbPayload])
