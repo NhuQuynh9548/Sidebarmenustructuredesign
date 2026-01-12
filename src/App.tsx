@@ -75,24 +75,24 @@ function AppLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppProvider>
-        <Router>
-          <Routes>
-            {/* Public Route */}
-            <Route path="/login" element={<LoginPage />} />
-            
-            {/* Protected Routes */}
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
+      <Router>
+        <Routes>
+          {/* Public Route */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <AppProvider>
                   <AppLayout />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </Router>
-      </AppProvider>
+                </AppProvider>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
     </AuthProvider>
   );
 }
