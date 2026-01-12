@@ -1,268 +1,145 @@
-# Hướng Dẫn Setup Database Postgres
+# Database Setup - Dữ Liệu Đã Sẵn Sàng ✅
 
-> **Lưu ý quan trọng**: Bước này là **TÙY CHỌN**. Hiện tại ứng dụng đang sử dụng **Supabase KV Store** (key-value storage) và hoạt động tốt mà không cần Postgres tables.
+## Tổng Quan
 
-Nếu bạn muốn migrate sang Postgres Database để có khả năng query phức tạp hơn, làm theo hướng dẫn dưới đây.
+Database Supabase đã được seed đầy đủ dữ liệu mẫu và sẵn sàng cho các thao tác CRUD.
 
----
+## Thống Kê Dữ Liệu
 
-## Khi Nào Nên Dùng Postgres?
+| Bảng | Records | Mô Tả |
+|------|---------|-------|
+| **business_units** | 5 | Các đơn vị kinh doanh |
+| **employees** | 8 | Nhân viên của công ty |
+| **partners** | 7 | Đối tác/Khách hàng/Nhà cung cấp |
+| **transactions** | 10 | Giao dịch thu chi |
+| **master_data** | ~30 | Dữ liệu danh mục |
 
-**Dùng KV Store** (hiện tại) khi:
-- Dữ liệu đơn giản, ít quan hệ
-- Cần tốc độ đọc/ghi nhanh
-- Không cần query phức tạp
+**Tổng cộng**: 60+ records
 
-**Dùng Postgres** khi:
-- Cần JOIN giữa nhiều bảng
-- Cần query phức tạp với aggregation
-- Cần transactions (ACID)
-- Cần foreign keys và constraints
-- Cần full-text search
+## Chi Tiết Dữ Liệu
 
----
+### 1. Business Units (5 BUs)
 
-## Cách Setup Postgres
+- **BU001** - BlueBolt G&A | Giám đốc: Nguyễn Văn A
+- **BU002** - BlueBolt R&D | Giám đốc: Trần Thị B
+- **BU003** - BlueBolt Academy | Giám đốc: Lê Văn C
+- **BU004** - BlueBolt Services | Giám đốc: Phạm Văn D
+- **BU005** - BlueBolt Software | Giám đốc: Hoàng Thị E
 
-### Bước 1: Mở SQL Editor
+### 2. Employees (8 nhân viên)
 
-1. Đăng nhập vào Supabase Dashboard
-2. Chọn project của bạn
-3. Click vào **SQL Editor** (icon </> ở sidebar trái)
-4. Click **New Query**
+- **NV001** - Nguyễn Văn An | Senior Developer @ BlueBolt Software (25M)
+- **NV002** - Trần Thị Bình | Product Manager @ BlueBolt Software (30M)
+- **NV003** - Lê Văn Cường | Training Manager @ BlueBolt Academy (22M)
+- **NV004** - Phạm Thị Dung | Account Manager @ BlueBolt Services (20M)
+- **NV005** - Hoàng Văn Em | Research Lead @ BlueBolt R&D (28M)
+- **NV006** - Vũ Thị Phương | HR Manager @ BlueBolt G&A (24M)
+- **NV007** - Đỗ Văn Giang | Junior Developer @ BlueBolt Software (15M)
+- **NV008** - Ngô Thị Hà | Content Creator @ BlueBolt Academy (18M)
 
-### Bước 2: Copy SQL Schema
+### 3. Partners (7 đối tác)
 
-1. Mở file `supabase_schema.sql` trong project
-2. Copy toàn bộ nội dung (Ctrl+A, Ctrl+C)
-3. Paste vào SQL Editor trong Supabase
-4. Click **Run** (hoặc Ctrl+Enter / Cmd+Enter)
+**Khách hàng (4):**
+- KH001 - Công ty TNHH ABC Tech
+- KH002 - Trường Đại học XYZ
+- KH003 - Tập đoàn GHI Holdings
+- KH004 - StartUp MNO
 
-### Bước 3: Đợi Hoàn Tất
+**Nhà cung cấp (2):**
+- NCC001 - Công ty Phần mềm DEF
+- NCC002 - Công ty Thiết bị JKL
 
-SQL sẽ thực thi và tạo:
-- ✅ 6 bảng chính
-- ✅ RLS policies cho bảo mật
-- ✅ Indexes để tối ưu
-- ✅ Triggers tự động
-- ✅ Dữ liệu mẫu
-- ✅ Views analytics
+**Đối tác (1):**
+- DT001 - Đối tác Chiến lược PQR
 
-Thời gian: ~10-15 giây
+### 4. Transactions (10 giao dịch)
 
-### Bước 4: Kiểm Tra
+**Thu nhập (5):** 312M VND
+- T122601: 150M - Dự án ABC Tech
+- T122602: 45M - Thu học phí Fullstack
+- T122603: 80M - Tư vấn GHI Holdings
+- T122604: 25M - Bảo trì MNO
+- T122605: 12M - Workshop React
 
-Sau khi chạy xong:
-1. Vào **Table Editor** trong Supabase
-2. Bạn sẽ thấy 6 bảng mới:
-   - `business_units`
-   - `employees`
-   - `partners`
-   - `transactions`
-   - `users`
-   - `master_data`
-3. Mỗi bảng đã có dữ liệu mẫu
+**Chi phí (5):** 255M VND
+- C122601: 35M - Mua laptop/màn hình
+- C122602: 180M - Lương tháng 1
+- C122603: 5M - Văn phòng phẩm
+- C122604: 15M - Marketing Facebook
+- C122605: 20M - R&D AI Features
 
----
+**Lợi nhuận:** 57M VND
 
-## Bảng Được Tạo
+### 5. Master Data (~30 records)
 
-### 1. business_units
-Quản lý các đơn vị kinh doanh (BU)
+- **Transaction Categories**: 10 loại (Dự án, Khóa học, Lương, Marketing...)
+- **Payment Methods**: 4 phương thức (Chuyển khoản, Tiền mặt, Thẻ, Ví điện tử)
+- **Positions**: 8 vị trí (Senior Dev, Product Manager, HR Manager...)
+- **Departments**: 7 phòng ban (Engineering, Product, Sales...)
 
-**Columns**:
-- `id` (uuid) - Primary key
-- `bu_code` (text) - Mã BU, unique
-- `bu_name` (text) - Tên BU
-- `description` (text) - Mô tả
-- `status` (text) - Trạng thái
-- `director` (text) - Giám đốc BU
-- `created_at`, `updated_at` - Timestamps
+## Tính Năng CRUD Đã Sẵn Sàng
 
-### 2. employees
-Quản lý nhân sự
+### ✅ Trang Quản Lý BU
+- View: Hiển thị 5 Business Units
+- Create: Thêm BU mới
+- Update: Sửa thông tin BU
+- Delete: Xóa BU
 
-**Columns**:
-- `id` (uuid) - Primary key
-- `employee_id` (text) - Mã nhân viên, unique
-- `employee_name` (text) - Họ tên
-- `business_unit` (text) - BU
-- `position` (text) - Chức vụ
-- `email`, `phone` - Liên hệ
-- `salary` (numeric) - Lương
-- `status` (text) - Trạng thái
+### ✅ Trang Quản Lý Nhân Sự
+- View: Hiển thị 8 nhân viên
+- Create: Thêm nhân viên mới
+- Update: Cập nhật thông tin
+- Delete: Xóa nhân viên
 
-### 3. partners
-Quản lý đối tác/khách hàng
+### ✅ Trang Quản Lý Đối Tác
+- View: Hiển thị 7 đối tác
+- Create: Thêm đối tác mới (Customer/Supplier/Vendor)
+- Update: Cập nhật thông tin
+- Delete: Xóa đối tác
 
-**Columns**:
-- `id` (uuid) - Primary key
-- `partner_code` (text) - Mã đối tác, unique
-- `partner_name` (text) - Tên đối tác
-- `partner_type` (text) - Loại (customer/supplier)
-- `business_unit` (text) - BU phụ trách
-- `email`, `phone`, `address` - Thông tin liên hệ
+### ✅ Trang Quản Lý Thu Chi
+- View: Hiển thị 10 giao dịch
+- Create: Tạo giao dịch thu/chi với mã tự động
+- Update: Cập nhật giao dịch
+- Delete: Xóa giao dịch
+- Filter: Lọc theo loại, BU, ngày
 
-### 4. transactions
-Quản lý giao dịch thu/chi
+## Cách Test
 
-**Columns**:
-- `id` (uuid) - Primary key
-- `transaction_code` (text) - Mã giao dịch, unique
-- `transaction_date` (date) - Ngày giao dịch
-- `type` (text) - income/expense
-- `business_unit` (text) - BU
-- `amount` (numeric) - Số tiền
-- `description` (text) - Mô tả
-- `payment_method` (text) - Phương thức thanh toán
-
-### 5. users
-Quản lý người dùng hệ thống
-
-**Columns**:
-- `id` (uuid) - Primary key
-- `username` (text) - Tên đăng nhập, unique
-- `email` (text) - Email, unique
-- `full_name` (text) - Họ tên
-- `role` (text) - Vai trò
-- `business_units` (text[]) - Danh sách BU được phép
-
-### 6. master_data
-Danh mục chung (categories, payment methods, positions...)
-
-**Columns**:
-- `id` (uuid) - Primary key
-- `type` (text) - Loại danh mục
-- `code` (text) - Mã
-- `name` (text) - Tên
-- `description` (text) - Mô tả
-- `metadata` (jsonb) - Dữ liệu bổ sung
-
----
-
-## Migrate Code Sang Postgres
-
-Sau khi tạo tables, bạn cần cập nhật code để dùng Postgres thay vì KV Store.
-
-### Cập nhật Edge Function
-
-Thay đổi trong `supabase/functions/make-server-393f5b29/api.ts`:
-
-**Thay vì** dùng KV Store:
-```typescript
-import * as kv from "./kv_store.ts";
-
-export const getBusinessUnits = async () => {
-  const bus = await kv.getByPrefix('bu:');
-  return bus.map(item => item.value);
-};
-```
-
-**Dùng Supabase Client**:
-```typescript
-import { createClient } from "jsr:@supabase/supabase-js@2";
-
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-);
-
-export const getBusinessUnits = async () => {
-  const { data, error } = await supabase
-    .from('business_units')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
-};
-```
-
-Làm tương tự cho tất cả các functions khác.
-
----
-
-## Row Level Security (RLS)
-
-Tất cả bảng đều có **RLS enabled** với policies:
-- SELECT: Authenticated users có thể xem
-- INSERT/UPDATE/DELETE: Authenticated users có thể thực hiện
-
-Policies này rất **permissive**. Trong production, bạn nên:
-1. Tạo policies chi tiết hơn dựa trên role
-2. Giới hạn access theo BU
-3. Check ownership trước khi cho phép thao tác
-
-**Ví dụ policy an toàn hơn**:
-```sql
--- Chỉ cho phép user xem transactions của BU mình
-CREATE POLICY "Users can only view own BU transactions"
-  ON transactions FOR SELECT
-  TO authenticated
-  USING (
-    business_unit = ANY(
-      SELECT unnest(business_units)
-      FROM users
-      WHERE id = auth.uid()
-    )
-  );
-```
-
----
-
-## Dữ Liệu Mẫu
-
-Schema đã bao gồm dữ liệu mẫu:
-- 5 Business Units
-- 5 Users (admin, ceo, 3 managers)
-- 5 Employees
-- 3 Partners
-- 5 Transactions
-- Master data (categories, payment methods, positions)
-
-Bạn có thể xóa dữ liệu mẫu sau khi test:
-```sql
-TRUNCATE business_units, employees, partners, transactions, users, master_data CASCADE;
-```
-
----
-
-## Backup & Restore
-
-### Backup
+### 1. Khởi động
 ```bash
-supabase db dump -f backup.sql
+npm run dev
 ```
 
-### Restore
-```bash
-supabase db reset
-psql $DATABASE_URL < backup.sql
-```
+### 2. Đăng nhập
+- Email: `ceo@bluebolt.vn`
+- Password: `ceo123`
+
+### 3. Kiểm tra từng trang
+1. **Dashboard** - Xem tổng quan
+2. **Quản Lý BU** - Thử CRUD với 5 BUs
+3. **Quản Lý Thu Chi** - Thử filter, add transaction
+4. **Quản Lý Nhân Sự** - Xem 8 nhân viên
+5. **Quản Lý Đối Tác** - Xem 7 đối tác
+6. **Settings** - Check connection (should show "Đã kết nối")
+
+## Database Connection
+
+- **URL**: https://ssjrpnziotdwhmxnljpm.supabase.co
+- **Status**: ✅ Connected
+- **RLS**: ❌ Disabled (for testing)
+- **Transform Layer**: ✅ snake_case ↔ camelCase
+
+## Status
+
+✅ Database Connected
+✅ Schema Created (6 tables)
+✅ Data Seeded (60+ records)
+✅ Transform Layer Working
+✅ CRUD Operations Ready
+✅ Build Successful
 
 ---
 
-## Troubleshooting
-
-### Lỗi: "permission denied for schema public"
-**Giải pháp**: Chạy lại SQL với user có quyền cao hơn hoặc liên hệ Supabase support.
-
-### Lỗi: "relation already exists"
-**Giải pháp**: Tables đã tồn tại. Muốn tạo lại, xóa tables cũ trước:
-```sql
-DROP TABLE IF EXISTS business_units, employees, partners, transactions, users, master_data CASCADE;
-```
-
-### Lỗi: "syntax error"
-**Giải pháp**: Đảm bảo copy toàn bộ nội dung file SQL, không thiếu dòng nào.
-
----
-
-## Kết Luận
-
-- Setup Postgres là **tùy chọn**, không bắt buộc
-- KV Store đủ tốt cho nhiều use cases
-- Postgres tốt hơn khi cần queries phức tạp
-- Sau khi tạo tables, nhớ cập nhật code Edge Functions
-
-Nếu không chắc, hãy tiếp tục dùng **KV Store** - đơn giản và hiệu quả!
+**Ngày cập nhật**: 2026-01-12
+**Trạng thái**: ✅ SẴN SÀNG SỬ DỤNG
