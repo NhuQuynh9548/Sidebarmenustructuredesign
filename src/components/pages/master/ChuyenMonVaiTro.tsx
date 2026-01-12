@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, UserCog, X, AlertCircle } from 'lucide-react';
+import { specializationsRolesAPI } from '../../../services/supabaseApi';
 
 interface Role {
   id: string;
@@ -7,30 +8,12 @@ interface Role {
   name: string;
   description: string;
   status: 'active' | 'inactive';
-  employeeCount: number;
+  employeeCount?: number;
 }
 
 export function ChuyenMonVaiTro() {
-  const [roles, setRoles] = useState<Role[]>([
-    { id: '1', code: 'BA', name: 'Business Analyst', description: 'Phân tích nghiệp vụ', status: 'active', employeeCount: 8 },
-    { id: '2', code: 'DEV', name: 'Developer', description: 'Lập trình viên', status: 'active', employeeCount: 35 },
-    { id: '3', code: 'DEVOPS', name: 'DevOps', description: 'Quản trị hệ thống', status: 'active', employeeCount: 6 },
-    { id: '4', code: 'DA', name: 'Data Analyst', description: 'Phân tích dữ liệu', status: 'active', employeeCount: 5 },
-    { id: '5', code: 'AI', name: 'AI Engineer', description: 'Kỹ sư AI/ML', status: 'active', employeeCount: 4 },
-    { id: '6', code: 'PM', name: 'Project Manager', description: 'Quản lý dự án', status: 'active', employeeCount: 7 },
-    { id: '7', code: 'QA', name: 'QA/QC', description: 'Kiểm thử chất lượng', status: 'active', employeeCount: 10 },
-    { id: '8', code: 'DES', name: 'Designer', description: 'Thiết kế UI/UX', status: 'active', employeeCount: 6 },
-    { id: '9', code: 'SAL', name: 'Sales', description: 'Kinh doanh', status: 'active', employeeCount: 8 },
-    { id: '10', code: 'MKT', name: 'Marketing', description: 'Marketing', status: 'active', employeeCount: 5 },
-    { id: '11', code: 'MED', name: 'Media', description: 'Truyền thông', status: 'active', employeeCount: 3 },
-    { id: '12', code: 'SOC', name: 'Social', description: 'Quản lý mạng xã hội', status: 'active', employeeCount: 2 },
-    { id: '13', code: 'ACC', name: 'Kế toán', description: 'Kế toán tài chính', status: 'active', employeeCount: 4 },
-    { id: '14', code: 'FS', name: 'Fullstack', description: 'Lập trình viên toàn diện', status: 'active', employeeCount: 12 },
-    { id: '15', code: 'PTN', name: 'Đối tác (Partner)', description: 'Cộng tác viên bên ngoài', status: 'active', employeeCount: 15 },
-    { id: '16', code: 'CS', name: 'Customer Service', description: 'Chăm sóc khách hàng', status: 'active', employeeCount: 6 },
-    { id: '17', code: 'TRN', name: 'Đào tạo (Trainer)', description: 'Giảng viên đào tạo', status: 'active', employeeCount: 8 },
-  ]);
-
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
@@ -44,6 +27,26 @@ export function ChuyenMonVaiTro() {
     description: '',
     status: 'active' as 'active' | 'inactive',
   });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const result = await specializationsRolesAPI.getAll();
+      if (result.success && result.data) {
+        setRoles(result.data);
+      } else {
+        console.error('Failed to load specializations/roles:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to load specializations/roles:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredRoles = roles.filter(role => {
     const matchesSearch = 
@@ -83,37 +86,57 @@ export function ChuyenMonVaiTro() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingRole) {
-      if (deletingRole.employeeCount > 0) {
+      if ((deletingRole.employeeCount || 0) > 0) {
         alert(`Không thể xóa vai trò "${deletingRole.name}" vì đã có ${deletingRole.employeeCount} nhân sự!`);
-      } else {
-        setRoles(roles.filter(r => r.id !== deletingRole.id));
+        setShowDeleteConfirm(false);
+        setDeletingRole(null);
+        return;
+      }
+
+      try {
+        const result = await specializationsRolesAPI.delete(deletingRole.id);
+        if (result.success) {
+          await loadData();
+        } else {
+          alert('Lỗi khi xóa: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Failed to delete:', error);
+        alert('Lỗi khi xóa vai trò');
       }
       setShowDeleteConfirm(false);
       setDeletingRole(null);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (editingRole) {
-      setRoles(roles.map(r =>
-        r.id === editingRole.id
-          ? { ...r, ...formData }
-          : r
-      ));
-    } else {
-      const newRole: Role = {
-        id: Date.now().toString(),
-        ...formData,
-        employeeCount: 0,
-      };
-      setRoles([...roles, newRole]);
+
+    try {
+      if (editingRole) {
+        const result = await specializationsRolesAPI.update(editingRole.id, formData);
+        if (result.success) {
+          await loadData();
+        } else {
+          alert('Lỗi khi cập nhật: ' + result.error);
+          return;
+        }
+      } else {
+        const result = await specializationsRolesAPI.create(formData);
+        if (result.success) {
+          await loadData();
+        } else {
+          alert('Lỗi khi tạo mới: ' + result.error);
+          return;
+        }
+      }
+      setShowModal(false);
+    } catch (error) {
+      console.error('Failed to submit:', error);
+      alert('Lỗi khi lưu dữ liệu');
     }
-    
-    setShowModal(false);
   };
 
   return (
@@ -165,72 +188,81 @@ export function ChuyenMonVaiTro() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Vai Trò</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mô Tả</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Số Nhân Sự</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredRoles.map((role) => (
-                <tr key={role.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="font-mono font-semibold text-[#1E6BB8]">{role.code}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <UserCog className="w-5 h-5 text-[#F7931E]" />
-                      <span className="font-medium text-gray-900">{role.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-600">{role.description}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">{role.employeeCount} người</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      role.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {role.status === 'active' ? 'Hoạt động' : 'Ngừng'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleEdit(role)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Chỉnh sửa"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(role)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredRoles.length === 0 && (
+        {loading ? (
           <div className="text-center py-12">
-            <UserCog className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không tìm thấy vai trò nào</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E6BB8]"></div>
+            <p className="text-gray-500 mt-4">Đang tải dữ liệu...</p>
           </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Vai Trò</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mô Tả</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Số Nhân Sự</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredRoles.map((role) => (
+                    <tr key={role.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="font-mono font-semibold text-[#1E6BB8]">{role.code}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <UserCog className="w-5 h-5 text-[#F7931E]" />
+                          <span className="font-medium text-gray-900">{role.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-600">{role.description}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-medium text-gray-900">{role.employeeCount || 0} người</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          role.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {role.status === 'active' ? 'Hoạt động' : 'Ngừng'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(role)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(role)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {filteredRoles.length === 0 && (
+              <div className="text-center py-12">
+                <UserCog className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">Không tìm thấy vai trò nào</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

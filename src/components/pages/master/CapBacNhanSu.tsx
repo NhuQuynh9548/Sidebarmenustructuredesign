@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, Award, X, AlertCircle } from 'lucide-react';
+import { employeeLevelsAPI } from '../../../services/supabaseApi';
 
 interface Level {
   id: string;
@@ -7,18 +8,12 @@ interface Level {
   name: string;
   description: string;
   status: 'active' | 'inactive';
-  employeeCount: number;
+  employeeCount?: number;
 }
 
 export function CapBacNhanSu() {
-  const [levels, setLevels] = useState<Level[]>([
-    { id: '1', code: 'L01', name: 'Nhân viên', description: 'Nhân viên thực thi', status: 'active', employeeCount: 45 },
-    { id: '2', code: 'L02', name: 'Trưởng nhóm (Lead)', description: 'Quản lý nhóm dự án', status: 'active', employeeCount: 12 },
-    { id: '3', code: 'L03', name: 'Trưởng phòng', description: 'Quản lý phòng ban', status: 'active', employeeCount: 8 },
-    { id: '4', code: 'L04', name: 'Quản lý (Manager)', description: 'Quản lý cấp cao', status: 'active', employeeCount: 5 },
-    { id: '5', code: 'L05', name: 'Giám đốc', description: 'Ban giám đốc điều hành', status: 'active', employeeCount: 3 },
-  ]);
-
+  const [levels, setLevels] = useState<Level[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
@@ -32,6 +27,26 @@ export function CapBacNhanSu() {
     description: '',
     status: 'active' as 'active' | 'inactive',
   });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const result = await employeeLevelsAPI.getAll();
+      if (result.success && result.data) {
+        setLevels(result.data);
+      } else {
+        console.error('Failed to load employee levels:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to load employee levels:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredLevels = levels.filter(level => {
     const matchesSearch = 
@@ -71,37 +86,57 @@ export function CapBacNhanSu() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingLevel) {
-      if (deletingLevel.employeeCount > 0) {
+      if ((deletingLevel.employeeCount || 0) > 0) {
         alert(`Không thể xóa cấp bậc "${deletingLevel.name}" vì đã có ${deletingLevel.employeeCount} nhân sự!`);
-      } else {
-        setLevels(levels.filter(l => l.id !== deletingLevel.id));
+        setShowDeleteConfirm(false);
+        setDeletingLevel(null);
+        return;
+      }
+
+      try {
+        const result = await employeeLevelsAPI.delete(deletingLevel.id);
+        if (result.success) {
+          await loadData();
+        } else {
+          alert('Lỗi khi xóa: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Failed to delete:', error);
+        alert('Lỗi khi xóa cấp bậc');
       }
       setShowDeleteConfirm(false);
       setDeletingLevel(null);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (editingLevel) {
-      setLevels(levels.map(l =>
-        l.id === editingLevel.id
-          ? { ...l, ...formData }
-          : l
-      ));
-    } else {
-      const newLevel: Level = {
-        id: Date.now().toString(),
-        ...formData,
-        employeeCount: 0,
-      };
-      setLevels([...levels, newLevel]);
+
+    try {
+      if (editingLevel) {
+        const result = await employeeLevelsAPI.update(editingLevel.id, formData);
+        if (result.success) {
+          await loadData();
+        } else {
+          alert('Lỗi khi cập nhật: ' + result.error);
+          return;
+        }
+      } else {
+        const result = await employeeLevelsAPI.create(formData);
+        if (result.success) {
+          await loadData();
+        } else {
+          alert('Lỗi khi tạo mới: ' + result.error);
+          return;
+        }
+      }
+      setShowModal(false);
+    } catch (error) {
+      console.error('Failed to submit:', error);
+      alert('Lỗi khi lưu dữ liệu');
     }
-    
-    setShowModal(false);
   };
 
   return (
@@ -153,20 +188,27 @@ export function CapBacNhanSu() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã Cấp Bậc</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Cấp Bậc</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mô Tả</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Số Nhân Sự</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredLevels.map((level) => (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E6BB8]"></div>
+            <p className="text-gray-500 mt-4">Đang tải dữ liệu...</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã Cấp Bậc</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Cấp Bậc</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mô Tả</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Số Nhân Sự</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredLevels.map((level) => (
                 <tr key={level.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="font-mono font-semibold text-[#1E6BB8]">{level.code}</span>
@@ -181,7 +223,7 @@ export function CapBacNhanSu() {
                     <span className="text-sm text-gray-600">{level.description}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">{level.employeeCount} người</span>
+                    <span className="text-sm font-medium text-gray-900">{level.employeeCount || 0} người</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -209,16 +251,18 @@ export function CapBacNhanSu() {
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        {filteredLevels.length === 0 && (
-          <div className="text-center py-12">
-            <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không tìm thấy cấp bậc nào</p>
-          </div>
+            {filteredLevels.length === 0 && (
+              <div className="text-center py-12">
+                <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">Không tìm thấy cấp bậc nào</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
