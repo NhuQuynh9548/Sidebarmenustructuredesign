@@ -12,17 +12,7 @@ interface Category {
 }
 
 export function DanhMucThuChi() {
-  const [categories, setCategories] = useState<Category[]>([
-    { id: '1', code: 'C01', name: 'Dịch vụ thuê ngoài', type: 'chi', description: 'Chi phí thuê dịch vụ bên ngoài', status: 'active', transactionCount: 45 },
-    { id: '2', code: 'C02', name: 'Lương & Phúc lợi', type: 'chi', description: 'Chi phí nhân sự và phúc lợi', status: 'active', transactionCount: 120 },
-    { id: '3', code: 'C03', name: 'Chi phí vận hành', type: 'chi', description: 'Chi phí điện, nước, văn phòng', status: 'active', transactionCount: 78 },
-    { id: '4', code: 'C04', name: 'Tư vấn & Kế toán', type: 'chi', description: 'Dịch vụ tư vấn và kế toán', status: 'active', transactionCount: 12 },
-    { id: '5', code: 'C05', name: 'Thiết bị & Công cụ', type: 'chi', description: 'Mua sắm thiết bị làm việc', status: 'active', transactionCount: 34 },
-    { id: '6', code: 'C06', name: 'Thuế & Phí', type: 'chi', description: 'Các khoản thuế và phí', status: 'active', transactionCount: 56 },
-    { id: '7', code: 'C07', name: 'Chi phí khác', type: 'chi', description: 'Các chi phí phát sinh khác', status: 'active', transactionCount: 23 },
-    { id: '8', code: 'T01', name: 'Doanh thu thuần', type: 'thu', description: 'Doanh thu từ hoạt động kinh doanh', status: 'active', transactionCount: 230 },
-    { id: '9', code: 'T02', name: 'Doanh thu dự phòng', type: 'thu', description: 'Doanh thu dự kiến trong tương lai', status: 'active', transactionCount: 15 },
-    { id: '10', code: 'V01', name: 'Vay đầu tư', type: 'vay', description: 'Vay vốn cho đầu tư phát triển', status: 'active', transactionCount: 8 },
+  
   ]);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -416,7 +406,7 @@ export function DanhMucThuChi() {
                   <span className="font-semibold">Tên:</span> {deletingCategory.name}
                 </p>
                 <p className="text-sm text-gray-700">
-                  
+                  <span className="font-semibold">Giao dịch liên kết:</span> {deletingCategory.transactionCount}
                 </p>
               </div>
 
