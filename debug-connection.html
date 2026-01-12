@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Kết Nối Supabase</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #4ec9b0;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .config-box {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .config-box h3 {
+            color: #569cd6;
+            margin-bottom: 10px;
+        }
+
+        .config-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: #1e1e1e;
+            border-left: 3px solid #4ec9b0;
+        }
+
+        .config-item strong {
+            color: #dcdcaa;
+            display: inline-block;
+            width: 180px;
+        }
+
+        .config-item code {
+            color: #ce9178;
+        }
+
+        .test-section {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .test-section.running {
+            border-left: 4px solid #ffa500;
+        }
+
+        .test-section.success {
+            border-left: 4px solid #4ec9b0;
+        }
+
+        .test-section.error {
+            border-left: 4px solid #f48771;
+        }
+
+        .test-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #569cd6;
+        }
+
+        .test-result {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .success-text {
+            color: #4ec9b0;
+        }
+
+        .error-text {
+            color: #f48771;
+        }
+
+        .warning-text {
+            color: #ffa500;
+        }
+
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        button:hover {
+            background: #1177bb;
+        }
+
+        button:disabled {
+            background: #3e3e42;
+            cursor: not-allowed;
+        }
+
+        .summary {
+            background: #252526;
+            border: 2px solid #3e3e42;
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .summary.success {
+            border-color: #4ec9b0;
+        }
+
+        .summary.error {
+            border-color: #f48771;
+        }
+
+        .log-viewer {
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #2d2d30;
+        }
+
+        .log-entry .timestamp {
+            color: #858585;
+            margin-right: 10px;
+        }
+
+        .log-entry.info {
+            color: #569cd6;
+        }
+
+        .log-entry.success {
+            color: #4ec9b0;
+        }
+
+        .log-entry.error {
+            color: #f48771;
+        }
+
+        .log-entry.warning {
+            color: #ffa500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DEBUG KẾT NỐI SUPABASE</h1>
+
+        <div class="config-box">
+            <h3>📋 Cấu Hình Hiện Tại</h3>
+            <div class="config-item">
+                <strong>Project ID:</strong>
+                <code id="projectId">geaklirrfdhdrqunjjjz</code>
+            </div>
+            <div class="config-item">
+                <strong>Supabase URL:</strong>
+                <code id="supabaseUrl">https://geaklirrfdhdrqunjjjz.supabase.co</code>
+            </div>
+            <div class="config-item">
+                <strong>Anon Key:</strong>
+                <code id="anonKey">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlYWtsaXJyZmRoZHJxdW5qamp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNTkyOTMsImV4cCI6MjA4MzczNTI5M30...</code>
+            </div>
+            <div class="config-item">
+                <strong>Edge Function URL:</strong>
+                <code id="edgeFunctionUrl">https://geaklirrfdhdrqunjjjz.supabase.co/functions/v1/make-server-393f5b29</code>
+            </div>
+        </div>
+
+        <button onclick="runAllTests()">🚀 Chạy Tất Cả Tests</button>
+        <button onclick="testEdgeFunction()">🔗 Test Edge Function Only</button>
+        <button onclick="testDirectDatabase()">💾 Test Database Trực Tiếp</button>
+        <button onclick="clearLogs()">🗑️ Xóa Logs</button>
+
+        <div id="tests"></div>
+
+        <div id="summary" style="display: none;"></div>
+
+        <div class="log-viewer">
+            <h3 style="color: #569cd6; margin-bottom: 10px;">📝 Console Logs</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://geaklirrfdhdrqunjjjz.supabase.co';
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlYWtsaXJyZmRoZHJxdW5qamp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNTkyOTMsImV4cCI6MjA4MzczNTI5M30.l3D6rRdIfZYngBohs6QcvHqksQDBN5LVTfCVwhGQhh0';
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+
+        function createTestSection(id, title) {
+            const testsDiv = document.getElementById('tests');
+            const section = document.createElement('div');
+            section.id = id;
+            section.className = 'test-section';
+            section.innerHTML = `
+                <div class="test-title">${title}</div>
+                <div class="test-result" id="${id}-result">Chờ chạy...</div>
+            `;
+            testsDiv.appendChild(section);
+            return section;
+        }
+
+        function updateTestResult(id, status, message, data = null) {
+            const section = document.getElementById(id);
+            const resultDiv = document.getElementById(`${id}-result`);
+
+            section.className = `test-section ${status}`;
+
+            let output = message;
+            if (data) {
+                output += '\n\n' + JSON.stringify(data, null, 2);
+            }
+
+            resultDiv.textContent = output;
+
+            if (status === 'success') {
+                resultDiv.className = 'test-result success-text';
+                log(`✅ ${message}`, 'success');
+            } else if (status === 'error') {
+                resultDiv.className = 'test-result error-text';
+                log(`❌ ${message}`, 'error');
+            } else {
+                resultDiv.className = 'test-result';
+                log(`⏳ ${message}`, 'info');
+            }
+        }
+
+        async function test1_BasicConnectivity() {
+            const testId = 'test1';
+            createTestSection(testId, '🌐 Test 1: Kiểm Tra Kết Nối Internet & Supabase');
+            updateTestResult(testId, 'running', 'Đang kiểm tra...');
+
+            try {
+                log('Đang ping Supabase URL...', 'info');
+                const response = await fetch(SUPABASE_URL, { method: 'HEAD' });
+
+                if (response.ok || response.status === 404) {
+                    updateTestResult(testId, 'success',
+                        `✅ Kết nối internet OK\n✅ Supabase domain reachable\nStatus: ${response.status}`);
+                    return true;
+                } else {
+                    updateTestResult(testId, 'error',
+                        `⚠️ Unexpected status: ${response.status}`);
+                    return false;
+                }
+            } catch (error) {
+                updateTestResult(testId, 'error',
+                    `❌ Không thể kết nối đến Supabase\nLỗi: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function test2_EdgeFunctionHealth() {
+            const testId = 'test2';
+            createTestSection(testId, '🔌 Test 2: Edge Function - Health Check');
+            updateTestResult(testId, 'running', 'Đang kiểm tra Edge Function...');
+
+            const url = `${SUPABASE_URL}/functions/v1/make-server-393f5b29/health`;
+            log(`Calling: ${url}`, 'info');
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`
+                    }
+                });
+
+                log(`Response status: ${response.status}`, 'info');
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    updateTestResult(testId, 'error',
+                        `❌ Edge Function không hoạt động\nHTTP ${response.status}\nResponse: ${errorText}\n\n⚠️ BẠN CẦN DEPLOY EDGE FUNCTION!\nChạy: ./deploy-edge-function.sh geaklirrfdhdrqunjjjz`);
+                    return false;
+                }
+
+                const data = await response.json();
+                log(`Health check response: ${JSON.stringify(data)}`, 'success');
+
+                if (data.status === 'ok') {
+                    updateTestResult(testId, 'success',
+                        `✅ Edge Function hoạt động tốt!`, data);
+                    return true;
+                } else {
+                    updateTestResult(testId, 'error',
+                        `⚠️ Response không đúng format`, data);
+                    return false;
+                }
+            } catch (error) {
+                updateTestResult(testId, 'error',
+                    `❌ Lỗi: ${error.message}\n\n⚠️ EDGE FUNCTION CHƯA ĐƯỢC DEPLOY!\nChạy: ./deploy-edge-function.sh geaklirrfdhdrqunjjjz`);
+                log(`Error calling health check: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function test3_EdgeFunctionBusinessUnits() {
+            const testId = 'test3';
+            createTestSection(testId, '📊 Test 3: Edge Function - Business Units API');
+            updateTestResult(testId, 'running', 'Đang đọc Business Units...');
+
+            const url = `${SUPABASE_URL}/functions/v1/make-server-393f5b29/business-units`;
+            log(`Calling: ${url}`, 'info');
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    updateTestResult(testId, 'error',
+                        `❌ HTTP ${response.status}\nResponse: ${errorText}`);
+                    return false;
+                }
+
+                const data = await response.json();
+                log(`Business units response: ${JSON.stringify(data)}`, 'info');
+
+                if (data.success && data.data) {
+                    const count = data.data.length;
+                    updateTestResult(testId, 'success',
+                        `✅ Đọc được ${count} Business Units\n${count === 0 ? '⚠️ Database trống (chưa có dữ liệu)' : ''}`,
+                        data.data.slice(0, 3));
+                    return true;
+                } else {
+                    updateTestResult(testId, 'error',
+                        `⚠️ Response không đúng format`, data);
+                    return false;
+                }
+            } catch (error) {
+                updateTestResult(testId, 'error',
+                    `❌ Lỗi: ${error.message}`);
+                log(`Error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function test4_DirectDatabaseAccess() {
+            const testId = 'test4';
+            createTestSection(testId, '💾 Test 4: Truy Cập Database Trực Tiếp');
+            updateTestResult(testId, 'running', 'Đang truy cập database...');
+
+            const url = `${SUPABASE_URL}/rest/v1/business_units?select=*&limit=5`;
+            log(`Direct DB call: ${url}`, 'info');
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'apikey': ANON_KEY,
+                        'Authorization': `Bearer ${ANON_KEY}`
+                    }
+                });
+
+                log(`Response status: ${response.status}`, 'info');
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    updateTestResult(testId, 'error',
+                        `❌ HTTP ${response.status}\nResponse: ${errorText}\n\n⚠️ Có thể:\n- Table 'business_units' chưa tồn tại\n- RLS policy chặn truy cập`);
+                    return false;
+                }
+
+                const data = await response.json();
+                log(`Database data: ${JSON.stringify(data)}`, 'success');
+
+                updateTestResult(testId, 'success',
+                    `✅ Truy cập database thành công!\nSố records: ${data.length}\n${data.length === 0 ? '⚠️ Table trống' : ''}`,
+                    data.slice(0, 3));
+                return true;
+            } catch (error) {
+                updateTestResult(testId, 'error',
+                    `❌ Lỗi: ${error.message}`);
+                log(`Error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function test5_CheckTables() {
+            const testId = 'test5';
+            createTestSection(testId, '🗃️ Test 5: Kiểm Tra Tables Trong Database');
+            updateTestResult(testId, 'running', 'Đang liệt kê tables...');
+
+            const tables = ['business_units', 'transactions', 'employees', 'partners'];
+            const results = [];
+
+            for (const table of tables) {
+                const url = `${SUPABASE_URL}/rest/v1/${table}?select=count&limit=0`;
+                log(`Checking table: ${table}`, 'info');
+
+                try {
+                    const response = await fetch(url, {
+                        headers: {
+                            'apikey': ANON_KEY,
+                            'Authorization': `Bearer ${ANON_KEY}`,
+                            'Prefer': 'count=exact'
+                        }
+                    });
+
+                    if (response.ok) {
+                        results.push(`✅ ${table}: EXISTS`);
+                    } else {
+                        results.push(`❌ ${table}: NOT FOUND or NO ACCESS (${response.status})`);
+                    }
+                } catch (error) {
+                    results.push(`❌ ${table}: ERROR - ${error.message}`);
+                }
+            }
+
+            const allExist = results.every(r => r.includes('✅'));
+            updateTestResult(testId, allExist ? 'success' : 'error',
+                results.join('\n') +
+                (allExist ? '\n\n✅ Tất cả tables đều tồn tại!' : '\n\n⚠️ Một số tables không tồn tại hoặc bị chặn bởi RLS'));
+
+            return allExist;
+        }
+
+        async function runAllTests() {
+            document.getElementById('tests').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+
+            log('========================================', 'info');
+            log('BẮT ĐẦU CHẠY TẤT CẢ TESTS', 'info');
+            log('========================================', 'info');
+
+            const results = [];
+
+            results.push(await test1_BasicConnectivity());
+            await new Promise(r => setTimeout(r, 500));
+
+            results.push(await test2_EdgeFunctionHealth());
+            await new Promise(r => setTimeout(r, 500));
+
+            if (results[1]) {
+                results.push(await test3_EdgeFunctionBusinessUnits());
+                await new Promise(r => setTimeout(r, 500));
+            } else {
+                log('⚠️ Bỏ qua test Edge Function APIs vì health check fail', 'warning');
+                results.push(false);
+            }
+
+            results.push(await test4_DirectDatabaseAccess());
+            await new Promise(r => setTimeout(r, 500));
+
+            results.push(await test5_CheckTables());
+
+            showSummary(results);
+        }
+
+        async function testEdgeFunction() {
+            document.getElementById('tests').innerHTML = '';
+            log('Testing Edge Function only...', 'info');
+            await test2_EdgeFunctionHealth();
+        }
+
+        async function testDirectDatabase() {
+            document.getElementById('tests').innerHTML = '';
+            log('Testing Direct Database Access...', 'info');
+            await test4_DirectDatabaseAccess();
+            await test5_CheckTables();
+        }
+
+        function showSummary(results) {
+            const summaryDiv = document.getElementById('summary');
+            const passed = results.filter(r => r).length;
+            const total = results.length;
+
+            summaryDiv.style.display = 'block';
+
+            if (passed === total) {
+                summaryDiv.className = 'summary success';
+                summaryDiv.innerHTML = `
+                    <h2 style="color: #4ec9b0; margin-bottom: 10px;">🎉 HOÀN HẢO!</h2>
+                    <p>Tất cả ${total} tests đều PASS!</p>
+                    <p style="margin-top: 10px;">Bạn có thể bắt đầu sử dụng ứng dụng ngay!</p>
+                `;
+                log('========================================', 'success');
+                log('✅ TẤT CẢ TESTS ĐỀU PASS!', 'success');
+                log('========================================', 'success');
+            } else {
+                summaryDiv.className = 'summary error';
+                summaryDiv.innerHTML = `
+                    <h2 style="color: #f48771; margin-bottom: 10px;">⚠️ CÓ VẤN ĐỀ!</h2>
+                    <p>${passed}/${total} tests PASS</p>
+                    <p style="margin-top: 10px; color: #ffa500;">Xem logs ở trên để biết chi tiết</p>
+                `;
+                log('========================================', 'error');
+                log(`❌ ${total - passed} TESTS FAILED`, 'error');
+                log('========================================', 'error');
+            }
+        }
+
+        log('Debug tool ready. Click a button to start testing.', 'info');
+    </script>
+</body>
+</html>
