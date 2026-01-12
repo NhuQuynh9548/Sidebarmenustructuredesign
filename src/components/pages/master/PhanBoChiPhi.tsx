@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Plus, Edit2, Power, X, Check, AlertCircle, Calendar } from 'lucide-react';
-import { costAllocationRulesAPI } from '../../../services/supabaseApi';
 
 interface BUAllocation {
-  buName?: string;
-  bu_name?: string;
+  buName: string;
   percentage: number;
 }
 
@@ -13,20 +11,34 @@ interface AllocationRule {
   code: string;
   name: string;
   description: string;
-  allocations?: BUAllocation[];
-  allocation_percentages?: any;
-  isDefault?: boolean;
-  is_default?: boolean;
+  allocations: BUAllocation[];
+  isDefault: boolean;
   status: 'active' | 'inactive';
-  effectiveDate?: string;
-  effective_date?: string;
-  expiryDate?: string | null;
-  expiry_date?: string | null;
+  effectiveDate: string;
+  expiryDate: string | null;
 }
 
 export function PhanBoChiPhi() {
-  const [rules, setRules] = useState<AllocationRule[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [rules, setRules] = useState<AllocationRule[]>([
+    {
+      id: '1',
+      code: 'PB_CHUNG',
+      name: 'Phân bổ chung',
+      description: 'Phân bổ chi phí theo tỷ lệ cố định',
+      allocations: [
+        { buName: 'BlueBolt G&A', percentage: 17 },
+        { buName: 'BlueBolt R&D', percentage: 14 },
+        { buName: 'BlueBolt Academy', percentage: 13 },
+        { buName: 'BlueBolt Services', percentage: 19 },
+        { buName: 'BlueBolt Software', percentage: 37 },
+      ],
+      isDefault: true,
+      status: 'active',
+      effectiveDate: '30/12/2025',
+      expiryDate: null
+    },
+  ]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingRule, setEditingRule] = useState<AllocationRule | null>(null);
@@ -37,65 +49,28 @@ export function PhanBoChiPhi() {
     code: '',
     name: '',
     description: '',
-    effective_date: '',
-    expiry_date: '',
-    allocation_percentages: {
-      'BlueBolt G&A': 0,
-      'BlueBolt R&D': 0,
-      'BlueBolt Academy': 0,
-      'BlueBolt Services': 0,
-      'BlueBolt Software': 0,
-    }
+    effectiveDate: '',
+    expiryDate: '',
+    allocations: [
+      { buName: 'BlueBolt G&A', percentage: 0 },
+      { buName: 'BlueBolt R&D', percentage: 0 },
+      { buName: 'BlueBolt Academy', percentage: 0 },
+      { buName: 'BlueBolt Services', percentage: 0 },
+      { buName: 'BlueBolt Software', percentage: 0 },
+    ]
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const result = await costAllocationRulesAPI.getAll();
-      if (result.success && result.data) {
-        setRules(result.data);
-      } else {
-        console.error('Failed to load cost allocation rules:', result.error);
-      }
-    } catch (error) {
-      console.error('Failed to load cost allocation rules:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const filteredRules = rules.filter(rule => {
-    const matchesSearch =
+    const matchesSearch = 
       rule.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rule.description.toLowerCase().includes(searchTerm.toLowerCase());
-
+    
     return matchesSearch;
   });
 
-  const getAllocationsArray = (rule: AllocationRule): BUAllocation[] => {
-    if (rule.allocations) return rule.allocations;
-    if (rule.allocation_percentages) {
-      return Object.entries(rule.allocation_percentages).map(([buName, percentage]) => ({
-        buName,
-        percentage: percentage as number
-      }));
-    }
-    return [];
-  };
-
-  const getTotalPercentage = (allocations: any) => {
-    if (Array.isArray(allocations)) {
-      return allocations.reduce((sum, a) => sum + a.percentage, 0);
-    }
-    if (typeof allocations === 'object') {
-      return Object.values(allocations).reduce((sum: number, val: any) => sum + Number(val || 0), 0);
-    }
-    return 0;
+  const getTotalPercentage = (allocations: BUAllocation[]) => {
+    return allocations.reduce((sum, a) => sum + a.percentage, 0);
   };
 
   const handleAdd = () => {
@@ -104,35 +79,28 @@ export function PhanBoChiPhi() {
       code: '',
       name: '',
       description: '',
-      effective_date: '',
-      expiry_date: '',
-      allocation_percentages: {
-        'BlueBolt G&A': 0,
-        'BlueBolt R&D': 0,
-        'BlueBolt Academy': 0,
-        'BlueBolt Services': 0,
-        'BlueBolt Software': 0,
-      }
+      effectiveDate: '',
+      expiryDate: '',
+      allocations: [
+        { buName: 'BlueBolt G&A', percentage: 0 },
+        { buName: 'BlueBolt R&D', percentage: 0 },
+        { buName: 'BlueBolt Academy', percentage: 0 },
+        { buName: 'BlueBolt Services', percentage: 0 },
+        { buName: 'BlueBolt Software', percentage: 0 },
+      ]
     });
     setShowModal(true);
   };
 
   const handleEdit = (rule: AllocationRule) => {
     setEditingRule(rule);
-    const allocPercentages = rule.allocation_percentages || {};
     setFormData({
       code: rule.code,
       name: rule.name,
       description: rule.description,
-      effective_date: rule.effective_date || rule.effectiveDate || '',
-      expiry_date: rule.expiry_date || rule.expiryDate || '',
-      allocation_percentages: {
-        'BlueBolt G&A': allocPercentages['BlueBolt G&A'] || 0,
-        'BlueBolt R&D': allocPercentages['BlueBolt R&D'] || 0,
-        'BlueBolt Academy': allocPercentages['BlueBolt Academy'] || 0,
-        'BlueBolt Services': allocPercentages['BlueBolt Services'] || 0,
-        'BlueBolt Software': allocPercentages['BlueBolt Software'] || 0,
-      }
+      effectiveDate: rule.effectiveDate,
+      expiryDate: rule.expiryDate || '',
+      allocations: [...rule.allocations]
     });
     setShowModal(true);
   };
@@ -142,85 +110,62 @@ export function PhanBoChiPhi() {
     setShowDeactivateConfirm(true);
   };
 
-  const confirmDeactivate = async () => {
+  const confirmDeactivate = () => {
     if (deactivatingRule) {
-      try {
-        const result = await costAllocationRulesAPI.update(deactivatingRule.id, { status: 'inactive' });
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi cập nhật: ' + result.error);
-        }
-      } catch (error) {
-        console.error('Failed to deactivate:', error);
-        alert('Lỗi khi ngừng hiệu lực quy tắc');
-      }
+      setRules(rules.map(r =>
+        r.id === deactivatingRule.id
+          ? { ...r, status: 'inactive' }
+          : r
+      ));
       setShowDeactivateConfirm(false);
       setDeactivatingRule(null);
     }
   };
 
-  const handleActivate = async (rule: AllocationRule) => {
-    try {
-      const result = await costAllocationRulesAPI.update(rule.id, { status: 'active' });
-      if (result.success) {
-        await loadData();
-      } else {
-        alert('Lỗi khi kích hoạt: ' + result.error);
-      }
-    } catch (error) {
-      console.error('Failed to activate:', error);
-      alert('Lỗi khi kích hoạt quy tắc');
-    }
+  const handleActivate = (rule: AllocationRule) => {
+    setRules(rules.map(r =>
+      r.id === rule.id
+        ? { ...r, status: 'active' }
+        : r
+    ));
   };
 
-  const handlePercentageChange = (buName: string, value: number) => {
-    setFormData({
-      ...formData,
-      allocation_percentages: {
-        ...formData.allocation_percentages,
-        [buName]: value
-      }
-    });
+  const handlePercentageChange = (index: number, value: number) => {
+    const newAllocations = [...formData.allocations];
+    newAllocations[index].percentage = value;
+    setFormData({ ...formData, allocations: newAllocations });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const total = getTotalPercentage(formData.allocation_percentages);
+    
+    const total = getTotalPercentage(formData.allocations);
     if (total !== 100) {
       alert(`⚠️ Tổng tỷ lệ phân bổ phải bằng 100%!\nHiện tại: ${total}%`);
       return;
     }
-
-    try {
-      if (editingRule) {
-        const result = await costAllocationRulesAPI.update(editingRule.id, formData);
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi cập nhật: ' + result.error);
-          return;
-        }
-      } else {
-        const result = await costAllocationRulesAPI.create(formData);
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi tạo mới: ' + result.error);
-          return;
-        }
-      }
-      setShowModal(false);
-    } catch (error) {
-      console.error('Failed to submit:', error);
-      alert('Lỗi khi lưu dữ liệu');
+    
+    if (editingRule) {
+      setRules(rules.map(r =>
+        r.id === editingRule.id
+          ? { ...r, ...formData, isDefault: editingRule.isDefault }
+          : r
+      ));
+    } else {
+      const newRule: AllocationRule = {
+        id: Date.now().toString(),
+        ...formData,
+        isDefault: false,
+        status: 'active',
+      };
+      setRules([...rules, newRule]);
     }
+    
+    setShowModal(false);
   };
 
   const formatDescription = (rule: AllocationRule) => {
-    const allocations = getAllocationsArray(rule);
-    const parts = allocations.map(a => `${(a.buName || a.bu_name || '').replace('BlueBolt ', '')}: ${a.percentage}%`);
+    const parts = rule.allocations.map(a => `${a.buName.replace('BlueBolt ', '')}: ${a.percentage}%`);
     return `Phân bổ chi phí theo tỷ lệ cố định: ${parts.join(', ')}`;
   };
 
@@ -256,132 +201,119 @@ export function PhanBoChiPhi() {
       </div>
 
       {/* Rules List */}
-      {loading ? (
-        <div className="text-center py-12 bg-white rounded-xl">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E6BB8]"></div>
-          <p className="text-gray-500 mt-4">Đang tải dữ liệu...</p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-6">
-            {filteredRules.map((rule) => {
-              const allocations = getAllocationsArray(rule);
-              const total = getTotalPercentage(rule.allocation_percentages || allocations);
-              const isValid = total === 100;
-              const isDefault = rule.is_default || rule.isDefault;
-              const effectiveDate = rule.effective_date || rule.effectiveDate;
-              const expiryDate = rule.expiry_date || rule.expiryDate;
+      <div className="space-y-6">
+        {filteredRules.map((rule) => {
+          const total = getTotalPercentage(rule.allocations);
+          const isValid = total === 100;
 
-              return (
-                <div key={rule.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                  {/* Rule Header */}
-                  <div className="p-6 border-b border-gray-200">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-bold text-gray-900">{rule.name}</h2>
-                        {isDefault && (
-                          <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full uppercase">
-                            Mặc định
-                          </span>
-                        )}
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full uppercase ${
-                          rule.status === 'active'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {rule.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(rule)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                        {rule.status === 'active' ? (
-                          <button
-                            onClick={() => handleDeactivate(rule)}
-                            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          >
-                            <Power className="w-4 h-4" />
-                            Ngừng hiệu lực
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleActivate(rule)}
-                            className="flex items-center gap-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          >
-                            <Power className="w-4 h-4" />
-                            Kích hoạt
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <p><span className="font-semibold">Code:</span> {rule.code}</p>
-                      <p>{formatDescription(rule)}</p>
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Calendar className="w-4 h-4" />
-                        <span>Từ {effectiveDate || '-'}</span>
-                        {expiryDate ? (
-                          <span>đến {expiryDate}</span>
-                        ) : (
-                          <span className="text-[#1E6BB8]">Hiệu lực vô thời hạn</span>
-                        )}
-                      </div>
-                    </div>
+          return (
+            <div key={rule.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* Rule Header */}
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-gray-900">{rule.name}</h2>
+                    {rule.isDefault && (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full uppercase">
+                        Mặc định
+                      </span>
+                    )}
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full uppercase ${
+                      rule.status === 'active' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {rule.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                    </span>
                   </div>
-
-                  {/* Allocation Details */}
-                  <div className="p-6">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-                      Chi tiết phân bổ
-                    </h3>
-
-                    <div className="grid grid-cols-5 gap-4 mb-4">
-                      {allocations.map((allocation) => (
-                        <div key={allocation.buName || allocation.bu_name} className="bg-gray-50 rounded-lg p-4 text-center">
-                          <p className="text-sm text-gray-600 mb-2">{allocation.buName || allocation.bu_name}</p>
-                          <p className="text-2xl font-bold text-[#1E6BB8]">{allocation.percentage.toFixed(2)}%</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {isValid ? (
-                        <>
-                          <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                          <span className="text-sm font-semibold text-green-700">Tổng: {total.toFixed(2)}%</span>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-5 h-5 text-red-500" />
-                          <span className="text-sm font-semibold text-red-700">
-                            Tổng: {total.toFixed(2)}% (Phải bằng 100%)
-                          </span>
-                        </>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEdit(rule)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Chỉnh sửa"
+                    >
+                      <Edit2 className="w-5 h-5" />
+                    </button>
+                    {rule.status === 'active' ? (
+                      <button
+                        onClick={() => handleDeactivate(rule)}
+                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <Power className="w-4 h-4" />
+                        Ngừng hiệu lực
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleActivate(rule)}
+                        className="flex items-center gap-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      >
+                        <Power className="w-4 h-4" />
+                        Kích hoạt
+                      </button>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
 
-          {filteredRules.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-xl">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-gray-400" />
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p><span className="font-semibold">Code:</span> {rule.code}</p>
+                  <p>{formatDescription(rule)}</p>
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Calendar className="w-4 h-4" />
+                    <span>Từ {rule.effectiveDate}</span>
+                    {rule.expiryDate ? (
+                      <span>đến {rule.expiryDate}</span>
+                    ) : (
+                      <a href="#" className="text-[#1E6BB8] hover:underline">Hiệu lực vô thời hạn</a>
+                    )}
+                  </div>
+                </div>
               </div>
-              <p className="text-gray-500">Không tìm thấy quy tắc phân bổ nào</p>
+
+              {/* Allocation Details */}
+              <div className="p-6">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+                  Chi tiết phân bổ
+                </h3>
+                
+                <div className="grid grid-cols-5 gap-4 mb-4">
+                  {rule.allocations.map((allocation) => (
+                    <div key={allocation.buName} className="bg-gray-50 rounded-lg p-4 text-center">
+                      <p className="text-sm text-gray-600 mb-2">{allocation.buName}</p>
+                      <p className="text-2xl font-bold text-[#1E6BB8]">{allocation.percentage.toFixed(2)}%</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {isValid ? (
+                    <>
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-sm font-semibold text-green-700">Tổng: {total}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <span className="text-sm font-semibold text-red-700">
+                        Tổng: {total}% (Phải bằng 100%)
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-        </>
+          );
+        })}
+      </div>
+
+      {filteredRules.length === 0 && (
+        <div className="text-center py-12 bg-white rounded-xl">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="text-gray-500">Không tìm thấy quy tắc phân bổ nào</p>
+        </div>
       )}
 
       {/* Add/Edit Modal */}
@@ -461,8 +393,8 @@ export function PhanBoChiPhi() {
                       </label>
                       <input
                         type="text"
-                        value={formData.effective_date}
-                        onChange={(e) => setFormData({ ...formData, effective_date: e.target.value })}
+                        value={formData.effectiveDate}
+                        onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
                         placeholder="30/12/2025"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                         required
@@ -474,8 +406,8 @@ export function PhanBoChiPhi() {
                       </label>
                       <input
                         type="text"
-                        value={formData.expiry_date}
-                        onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                        value={formData.expiryDate}
+                        onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
                         placeholder="Để trống = Vô thời hạn"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                       />
@@ -485,19 +417,19 @@ export function PhanBoChiPhi() {
                   {/* Allocations */}
                   <div className="border-t border-gray-200 pt-5">
                     <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase">
-                      Chi Tiết Phân Bổ (Tổng: {getTotalPercentage(formData.allocation_percentages)}%)
+                      Chi Tiết Phân Bổ (Tổng: {getTotalPercentage(formData.allocations)}%)
                     </h3>
                     <div className="space-y-3">
-                      {Object.entries(formData.allocation_percentages).map(([buName, percentage]) => (
-                        <div key={buName} className="flex items-center gap-4">
+                      {formData.allocations.map((allocation, index) => (
+                        <div key={allocation.buName} className="flex items-center gap-4">
                           <label className="flex-1 text-sm font-medium text-gray-700">
-                            {buName}
+                            {allocation.buName}
                           </label>
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
-                              value={percentage as number}
-                              onChange={(e) => handlePercentageChange(buName, parseFloat(e.target.value) || 0)}
+                              value={allocation.percentage}
+                              onChange={(e) => handlePercentageChange(index, parseFloat(e.target.value) || 0)}
                               step="0.01"
                               min="0"
                               max="100"
@@ -509,21 +441,21 @@ export function PhanBoChiPhi() {
                         </div>
                       ))}
                     </div>
-
+                    
                     <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                       <div className="flex items-center gap-2">
-                        {getTotalPercentage(formData.allocation_percentages) === 100 ? (
+                        {getTotalPercentage(formData.allocations) === 100 ? (
                           <>
                             <Check className="w-5 h-5 text-green-600" />
                             <span className="text-sm font-semibold text-green-700">
-                              Tổng: {getTotalPercentage(formData.allocation_percentages).toFixed(2)}% ✓
+                              Tổng: {getTotalPercentage(formData.allocations).toFixed(2)}% ✓
                             </span>
                           </>
                         ) : (
                           <>
                             <AlertCircle className="w-5 h-5 text-red-600" />
                             <span className="text-sm font-semibold text-red-700">
-                              Tổng: {getTotalPercentage(formData.allocation_percentages).toFixed(2)}% (Phải bằng 100%)
+                              Tổng: {getTotalPercentage(formData.allocations).toFixed(2)}% (Phải bằng 100%)
                             </span>
                           </>
                         )}

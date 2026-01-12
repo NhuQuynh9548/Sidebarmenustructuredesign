@@ -21,7 +21,6 @@ import { QuanLyDuAn } from './components/pages/master/QuanLyDuAn';
 import { CapBacNhanSu } from './components/pages/master/CapBacNhanSu';
 import { ChuyenMonVaiTro } from './components/pages/master/ChuyenMonVaiTro';
 import { PhuongThucThanhToan } from './components/pages/master/PhuongThucThanhToan';
-import TestConnection from './components/pages/TestConnection';
 
 function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -58,9 +57,6 @@ function AppLayout() {
             <Route path="/master/cap-bac" element={<CapBacNhanSu />} />
             <Route path="/master/chuyen-mon" element={<ChuyenMonVaiTro />} />
             <Route path="/master/thanh-toan" element={<PhuongThucThanhToan />} />
-
-            {/* Test Connection Route */}
-            <Route path="/test-connection" element={<TestConnection />} />
           </Routes>
         </div>
       </main>
@@ -71,24 +67,24 @@ function AppLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Route */}
-          <Route path="/login" element={<LoginPage />} />
-
-          {/* Protected Routes */}
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <AppProvider>
+      <AppProvider>
+        <Router>
+          <Routes>
+            {/* Public Route */}
+            <Route path="/login" element={<LoginPage />} />
+            
+            {/* Protected Routes */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
                   <AppLayout />
-                </AppProvider>
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Router>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Router>
+      </AppProvider>
     </AuthProvider>
   );
 }

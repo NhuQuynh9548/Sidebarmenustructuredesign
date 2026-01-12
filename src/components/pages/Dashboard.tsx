@@ -1,68 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Percent, Eye, X, ChartBar as BarChart3, ListFilter as Filter, Calendar, RefreshCw } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { TrendingUp, TrendingDown, DollarSign, Percent, Eye, X, BarChart3, Filter, Calendar } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useApp } from '../../contexts/AppContext';
-import { dashboardAPI } from '../../services/supabaseApi';
 
 export function Dashboard() {
   const { selectedBU, canSelectBU, currentUser } = useApp();
-
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Load real data from database
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      setLoading(true);
-      try {
-        const result = await dashboardAPI.getData();
-        if (result.success) {
-          setDashboardData(result.data);
-        }
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboardData();
-  }, []);
-
-  // Process transactions from database into BU performance data
-  const processBUDataFromTransactions = (transactions: any[]): any[] => {
-    const buMap: { [key: string]: { incomeTransactions: any[], expenseTransactions: any[] } } = {};
-
-    // Group transactions by business unit
-    transactions.forEach((txn: any) => {
-      const bu = txn.business_unit || 'Không phân bổ';
-      if (!buMap[bu]) {
-        buMap[bu] = { incomeTransactions: [], expenseTransactions: [] };
-      }
-
-      const transactionData = {
-        code: txn.transaction_code,
-        date: new Date(txn.transaction_date).toLocaleDateString('vi-VN'),
-        category: txn.category,
-        amount: Number(txn.amount),
-        description: txn.description || '-'
-      };
-
-      if (txn.type === 'income') {
-        buMap[bu].incomeTransactions.push(transactionData);
-      } else if (txn.type === 'expense') {
-        buMap[bu].expenseTransactions.push(transactionData);
-      }
-    });
-
-    // Convert to array format
-    return Object.entries(buMap).map(([buName, data], index) => ({
-      id: (index + 1).toString(),
-      bu: buName,
-      incomeTransactions: data.incomeTransactions,
-      expenseTransactions: data.expenseTransactions
-    }));
-  };
   
   const [selectedBUForModal, setSelectedBUForModal] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -125,14 +67,8 @@ export function Dashboard() {
 
   const dateRange = getDateRange();
 
-  // BU Performance Data from database
-  const buPerformanceData = useMemo(() => {
-    if (!dashboardData?.transactions) return [];
-    return processBUDataFromTransactions(dashboardData.transactions);
-  }, [dashboardData]);
-
-  // Fallback BU Performance Data with detailed transactions (for demo purposes if no DB data)
-  const fallbackBuPerformanceData = [
+  // BU Performance Data with detailed transactions - MUST BE DECLARED FIRST
+  const buPerformanceData = [
     {
       id: '1',
       bu: 'BlueBolt Services',
@@ -452,17 +388,6 @@ export function Dashboard() {
         return `Năm ${new Date().getFullYear()}`;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">

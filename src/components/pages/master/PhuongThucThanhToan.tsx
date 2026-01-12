@@ -1,20 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Plus, Edit2, Trash2, CreditCard, X, AlertCircle } from 'lucide-react';
-import { paymentMethodsAPI } from '../../../services/supabaseApi';
 
 interface PaymentMethod {
   id: string;
   code: string;
   name: string;
-  description: string;
-  account_info?: any;
+  type: string;
+  accountInfo: string;
   status: 'active' | 'inactive';
-  transaction_count?: number;
+  transactionCount: number;
 }
 
 export function PhuongThucThanhToan() {
-  const [methods, setMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [methods, setMethods] = useState<PaymentMethod[]>([
+    { id: '1', code: 'CASH', name: 'Tiền mặt', type: 'Giao dịch tại quỹ', accountInfo: 'Local Currency', status: 'active', transactionCount: 145 },
+    { id: '2', code: 'FT', name: 'Chuyển khoản', type: 'Financial Transfer', accountInfo: 'Chuyển khoản trong nước/quốc tế', status: 'active', transactionCount: 567 },
+    { id: '3', code: 'CHQ', name: 'Séc', type: 'Thanh toán bằng séc', accountInfo: 'Séc doanh nghiệp', status: 'active', transactionCount: 23 },
+    { id: '4', code: 'AC-TR', name: 'Chuyển khoản nội bộ', type: 'Điều chuyển nội bộ', accountInfo: 'Giữa các tài khoản BLUEBOLT', status: 'active', transactionCount: 89 },
+    { id: '5', code: 'CARD', name: 'Thẻ', type: 'Thanh toán qua thẻ', accountInfo: 'Thẻ tín dụng/ghi nợ công ty', status: 'active', transactionCount: 234 },
+    { id: '6', code: 'CLRG', name: 'Bù trừ', type: 'Clearing', accountInfo: 'Giao dịch bù trừ công nợ đối tác', status: 'active', transactionCount: 45 },
+  ]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
@@ -25,39 +31,19 @@ export function PhuongThucThanhToan() {
   const [formData, setFormData] = useState({
     code: '',
     name: '',
-    description: '',
-    account_info: '',
+    type: '',
+    accountInfo: '',
     status: 'active' as 'active' | 'inactive',
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const result = await paymentMethodsAPI.getAll();
-      if (result.success && result.data) {
-        setMethods(result.data);
-      } else {
-        console.error('Failed to load payment methods:', result.error);
-      }
-    } catch (error) {
-      console.error('Failed to load payment methods:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const filteredMethods = methods.filter(method => {
-    const matchesSearch =
+    const matchesSearch = 
       method.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       method.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (method.description && method.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
+      method.type.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesStatus = filterStatus === 'all' || method.status === filterStatus;
-
+    
     return matchesSearch && matchesStatus;
   });
 
@@ -66,8 +52,8 @@ export function PhuongThucThanhToan() {
     setFormData({
       code: '',
       name: '',
-      description: '',
-      account_info: '',
+      type: '',
+      accountInfo: '',
       status: 'active',
     });
     setShowModal(true);
@@ -75,14 +61,11 @@ export function PhuongThucThanhToan() {
 
   const handleEdit = (method: PaymentMethod) => {
     setEditingMethod(method);
-    const accountInfo = typeof method.account_info === 'string'
-      ? method.account_info
-      : JSON.stringify(method.account_info || {});
     setFormData({
       code: method.code,
       name: method.name,
-      description: method.description || '',
-      account_info: accountInfo,
+      type: method.type,
+      accountInfo: method.accountInfo,
       status: method.status,
     });
     setShowModal(true);
@@ -93,58 +76,37 @@ export function PhuongThucThanhToan() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (deletingMethod) {
-      const txCount = deletingMethod.transaction_count || 0;
-      if (txCount > 0) {
-        alert(`Không thể xóa phương thức "${deletingMethod.name}" vì đã có ${txCount} giao dịch!`);
-        setShowDeleteConfirm(false);
-        setDeletingMethod(null);
-        return;
-      }
-
-      try {
-        const result = await paymentMethodsAPI.delete(deletingMethod.id);
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi xóa: ' + result.error);
-        }
-      } catch (error) {
-        console.error('Failed to delete:', error);
-        alert('Lỗi khi xóa phương thức thanh toán');
+      if (deletingMethod.transactionCount > 0) {
+        alert(`Không thể xóa phương thức "${deletingMethod.name}" vì đã có ${deletingMethod.transactionCount} giao dịch!`);
+      } else {
+        setMethods(methods.filter(m => m.id !== deletingMethod.id));
       }
       setShowDeleteConfirm(false);
       setDeletingMethod(null);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      if (editingMethod) {
-        const result = await paymentMethodsAPI.update(editingMethod.id, formData);
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi cập nhật: ' + result.error);
-          return;
-        }
-      } else {
-        const result = await paymentMethodsAPI.create(formData);
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi tạo mới: ' + result.error);
-          return;
-        }
-      }
-      setShowModal(false);
-    } catch (error) {
-      console.error('Failed to submit:', error);
-      alert('Lỗi khi lưu dữ liệu');
+    
+    if (editingMethod) {
+      setMethods(methods.map(m =>
+        m.id === editingMethod.id
+          ? { ...m, ...formData }
+          : m
+      ));
+    } else {
+      const newMethod: PaymentMethod = {
+        id: Date.now().toString(),
+        ...formData,
+        transactionCount: 0,
+      };
+      setMethods([...methods, newMethod]);
     }
+    
+    setShowModal(false);
   };
 
   return (
@@ -196,81 +158,76 @@ export function PhuongThucThanhToan() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E6BB8]"></div>
-            <p className="text-gray-500 mt-4">Đang tải dữ liệu...</p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Phương Thức</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mô Tả</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Giao Dịch</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredMethods.map((method) => (
-                    <tr key={method.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-mono font-semibold text-[#1E6BB8]">{method.code}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-5 h-5 text-[#F7931E]" />
-                          <span className="font-medium text-gray-900">{method.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{method.description || '-'}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">{method.transaction_count || 0}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          method.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {method.status === 'active' ? 'Hoạt động' : 'Ngừng'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleEdit(method)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(method)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Xóa"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Phương Thức</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Loại Thanh Toán</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Thông Tin Tài Khoản</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Giao Dịch</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredMethods.map((method) => (
+                <tr key={method.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="font-mono font-semibold text-[#1E6BB8]">{method.code}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-5 h-5 text-[#F7931E]" />
+                      <span className="font-medium text-gray-900">{method.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-gray-600">{method.type}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-gray-600">{method.accountInfo}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">{method.transactionCount}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      method.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {method.status === 'active' ? 'Hoạt động' : 'Ngừng'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleEdit(method)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(method)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-            {filteredMethods.length === 0 && (
-              <div className="text-center py-12">
-                <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Không tìm thấy phương thức nào</p>
-              </div>
-            )}
-          </>
+        {filteredMethods.length === 0 && (
+          <div className="text-center py-12">
+            <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">Không tìm thấy phương thức nào</p>
+          </div>
         )}
       </div>
 
@@ -346,28 +303,29 @@ export function PhuongThucThanhToan() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
-                      Mô Tả
+                      Loại Thanh Toán
                     </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Mô tả chi tiết về phương thức thanh toán..."
-                      rows={2}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all resize-none"
+                    <input
+                      type="text"
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      placeholder="Ví dụ: Financial Transfer"
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                       required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
-                      Thông Tin Bổ Sung
+                      Số Tài Khoản / Thông Tin Đích
                     </label>
                     <textarea
-                      value={formData.account_info}
-                      onChange={(e) => setFormData({ ...formData, account_info: e.target.value })}
-                      placeholder="Thông tin chi tiết (JSON format hoặc text)..."
+                      value={formData.accountInfo}
+                      onChange={(e) => setFormData({ ...formData, accountInfo: e.target.value })}
+                      placeholder="Thông tin chi tiết về tài khoản..."
                       rows={3}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all resize-none"
+                      required
                     />
                   </div>
                 </div>
@@ -417,14 +375,14 @@ export function PhuongThucThanhToan() {
                   <span className="font-semibold">Tên:</span> {deletingMethod.name}
                 </p>
                 <p className="text-sm text-gray-700">
-                  <span className="font-semibold">Giao dịch:</span> {deletingMethod.transaction_count || 0}
+                  <span className="font-semibold">Giao dịch:</span> {deletingMethod.transactionCount}
                 </p>
               </div>
 
-              {(deletingMethod.transaction_count || 0) > 0 && (
+              {deletingMethod.transactionCount > 0 && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                   <p className="text-sm text-yellow-800">
-                    ⚠️ Phương thức này đã có {deletingMethod.transaction_count} giao dịch. Không thể xóa!
+                    ⚠️ Phương thức này đã có {deletingMethod.transactionCount} giao dịch. Không thể xóa!
                   </p>
                 </div>
               )}

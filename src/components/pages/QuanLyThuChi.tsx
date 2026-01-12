@@ -3,7 +3,6 @@ import { Search, Plus, Eye, Edit2, Trash2, DollarSign, X, AlertCircle, ChevronLe
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DatePicker } from '../DatePicker';
-import { useTransactions } from '../../hooks/useTransactions';
 
 interface AllocationPreview {
   bu: string;
@@ -104,51 +103,7 @@ export function QuanLyThuChi() {
     }
   };
 
-  // Use database hook for transactions
-  const {
-    transactions: dbTransactions,
-    loading: dbLoading,
-    error: dbError,
-    loadTransactions,
-    createTransaction: dbCreateTransaction,
-    updateTransaction: dbUpdateTransaction,
-    deleteTransaction: dbDeleteTransaction
-  } = useTransactions();
-
-  // Normalize database transactions to UI format
-  const transactions: Transaction[] = dbTransactions.map(txn => {
-    // Convert date from YYYY-MM-DD to DD/MM/YYYY
-    let formattedDate = txn.transactionDate || '';
-    if (formattedDate.includes('-')) {
-      const [year, month, day] = formattedDate.split('-');
-      formattedDate = `${day}/${month}/${year}`;
-    }
-
-    return {
-      id: txn.id,
-      transactionCode: txn.transactionCode || '',
-      transactionDate: formattedDate,
-      transactionType: (txn.transactionType || 'income') as 'income' | 'expense' | 'loan',
-      category: txn.category || '',
-      project: txn.project || '',
-      objectType: (txn.objectType || 'partner') as 'partner' | 'employee',
-      objectName: txn.objectName || '',
-      paymentMethod: txn.paymentMethod || '',
-      businessUnit: txn.businessUnit || '',
-      amount: txn.amount || 0,
-      costAllocation: (txn.costAllocation || 'direct') as 'direct' | 'indirect',
-      allocationRule: txn.allocationRule,
-      attachments: txn.attachments || 0,
-      attachedFiles: [],
-      paymentStatus: (txn.paymentStatus || 'unpaid') as 'paid' | 'unpaid',
-      approvalStatus: (txn.approvalStatus || 'draft') as 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled',
-      rejectionReason: txn.rejectionReason,
-      description: txn.description || '',
-    };
-  });
-
-
-  const _mockTransactions = [
+  const [transactions, setTransactions] = useState<Transaction[]>([
     {
       id: '1',
       transactionCode: 'T0125_01',
@@ -337,7 +292,7 @@ export function QuanLyThuChi() {
       approvalStatus: 'pending',
       description: 'Tạm ứng cho dự án tháng 3'
     },
-  ];
+  ]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -681,19 +636,17 @@ export function QuanLyThuChi() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (deletingTransaction) {
-      const result = await dbDeleteTransaction(deletingTransaction.id);
-      if (result.success) {
-        setShowDeleteConfirm(false);
-        setDeletingTransaction(null);
-      }
+      setTransactions(transactions.filter(t => t.id !== deletingTransaction.id));
+      setShowDeleteConfirm(false);
+      setDeletingTransaction(null);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Validation
     if (!formData.amount || formData.amount <= 0) {
       alert('Số tiền phải lớn hơn 0');
@@ -709,48 +662,22 @@ export function QuanLyThuChi() {
       alert('Vui lòng chọn quy tắc phân bổ cho chi phí gián tiếp');
       return;
     }
-
-    // Prepare data for database
-    // Convert date from DD/MM/YYYY to YYYY-MM-DD for database
-    let dbDate = formData.transactionDate;
-    if (dbDate.includes('/')) {
-      const [day, month, year] = dbDate.split('/');
-      dbDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    }
-
-    const dbData = {
-      transactionDate: dbDate,
-      transactionType: formData.transactionType,
-      category: formData.category,
-      objectName: formData.objectName,
-      objectType: formData.objectType,
-      paymentMethod: formData.paymentMethod,
-      businessUnit: formData.businessUnit,
-      amount: formData.amount,
-      description: formData.description,
-      paymentStatus: formData.paymentStatus,
-      approvalStatus: formData.approvalStatus,
-      attachments: formData.attachments || 0,
-      project: formData.project,
-      costAllocation: formData.costAllocation,
-      allocationRule: formData.allocationRule,
-    };
-
+    
     if (modalMode === 'create') {
-      const result = await dbCreateTransaction(dbData);
-      if (result.success) {
-        setModalMode(null);
-        setSelectedTransaction(null);
-        setUploadedFiles([]);
-      }
+      const newTransaction: Transaction = {
+        id: Date.now().toString(),
+        ...formData as Transaction,
+      };
+      setTransactions([newTransaction, ...transactions]);
     } else if (modalMode === 'edit' && selectedTransaction) {
-      const result = await dbUpdateTransaction(selectedTransaction.id, dbData);
-      if (result.success) {
-        setModalMode(null);
-        setSelectedTransaction(null);
-        setUploadedFiles([]);
-      }
+      setTransactions(transactions.map(t =>
+        t.id === selectedTransaction.id ? { ...t, ...formData } as Transaction : t
+      ));
     }
+    
+    setModalMode(null);
+    setSelectedTransaction(null);
+    setUploadedFiles([]);
   };
 
   const handleSubmitForApproval = () => {
@@ -1109,18 +1036,6 @@ export function QuanLyThuChi() {
         return <td key={column.id} className={`px-4 py-3 ${alignClass}`}>-</td>;
     }
   };
-
-  // Show loading state
-  if (dbLoading && transactions.length === 0) {
-    return (
-      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Đang tải dữ liệu giao dịch...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <DndProvider backend={HTML5Backend}>

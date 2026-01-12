@@ -1,27 +1,83 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Plus, Edit2, Trash2, Briefcase, X, AlertCircle, Calendar, DollarSign } from 'lucide-react';
-import { projectsAPI } from '../../../services/supabaseApi';
 
 interface Project {
   id: string;
   code: string;
   name: string;
-  bu_owner?: string;
-  buOwner?: string;
-  pm?: string;
-  project_manager?: string;
+  buOwner: string;
+  pm: string;
   budget: number;
-  spent?: number;
-  start_date?: string;
-  startDate?: string;
-  end_date?: string;
-  endDate?: string;
+  spent: number;
+  startDate: string;
+  endDate: string;
   status: 'ongoing' | 'paused' | 'completed' | 'closed';
 }
 
 export function QuanLyDuAn() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Project[]>([
+    { 
+      id: '1', 
+      code: 'PRJ-2024-001', 
+      name: 'BlueBolt ERP System', 
+      buOwner: 'BlueBolt Software', 
+      pm: 'Nguyễn Văn A',
+      budget: 500000000,
+      spent: 320000000,
+      startDate: '2024-01-15',
+      endDate: '2024-12-31',
+      status: 'ongoing'
+    },
+    { 
+      id: '2', 
+      code: 'PRJ-2024-002', 
+      name: 'AI Chatbot Platform', 
+      buOwner: 'BlueBolt R&D', 
+      pm: 'Trần Thị B',
+      budget: 300000000,
+      spent: 180000000,
+      startDate: '2024-03-01',
+      endDate: '2024-09-30',
+      status: 'ongoing'
+    },
+    { 
+      id: '3', 
+      code: 'PRJ-2023-015', 
+      name: 'Website Corporate', 
+      buOwner: 'BlueBolt Services', 
+      pm: 'Lê Văn C',
+      budget: 150000000,
+      spent: 150000000,
+      startDate: '2023-10-01',
+      endDate: '2024-01-31',
+      status: 'completed'
+    },
+    { 
+      id: '4', 
+      code: 'PRJ-2024-003', 
+      name: 'Mobile Banking App', 
+      buOwner: 'BlueBolt Software', 
+      pm: 'Phạm Thị D',
+      budget: 800000000,
+      spent: 420000000,
+      startDate: '2024-02-01',
+      endDate: '2025-01-31',
+      status: 'ongoing'
+    },
+    { 
+      id: '5', 
+      code: 'PRJ-2024-004', 
+      name: 'Data Analytics Platform', 
+      buOwner: 'BlueBolt R&D', 
+      pm: 'Hoàng Văn E',
+      budget: 450000000,
+      spent: 0,
+      startDate: '2024-06-01',
+      endDate: '2024-12-31',
+      status: 'paused'
+    },
+  ]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBU, setFilterBU] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -33,48 +89,25 @@ export function QuanLyDuAn() {
   const [formData, setFormData] = useState({
     code: '',
     name: '',
-    bu_owner: '',
-    project_manager: '',
+    buOwner: '',
+    pm: '',
     budget: 0,
-    start_date: '',
-    end_date: '',
+    startDate: '',
+    endDate: '',
     status: 'ongoing' as 'ongoing' | 'paused' | 'completed' | 'closed',
   });
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const result = await projectsAPI.getAll();
-      if (result.success && result.data) {
-        setProjects(result.data);
-      } else {
-        console.error('Failed to load projects:', result.error);
-      }
-    } catch (error) {
-      console.error('Failed to load projects:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const buList = ['BlueBolt Software', 'BlueBolt Services', 'BlueBolt R&D', 'BlueBolt Academy', 'BlueBolt G&A'];
 
   const filteredProjects = projects.filter(project => {
-    const pm = project.project_manager || project.pm || '';
-    const buOwner = project.bu_owner || project.buOwner || '';
-
-    const matchesSearch =
+    const matchesSearch = 
       project.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pm.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesBU = filterBU === 'all' || buOwner === filterBU;
+      project.pm.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesBU = filterBU === 'all' || project.buOwner === filterBU;
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus;
-
+    
     return matchesSearch && matchesBU && matchesStatus;
   });
 
@@ -83,11 +116,11 @@ export function QuanLyDuAn() {
     setFormData({
       code: '',
       name: '',
-      bu_owner: '',
-      project_manager: '',
+      buOwner: '',
+      pm: '',
       budget: 0,
-      start_date: '',
-      end_date: '',
+      startDate: '',
+      endDate: '',
       status: 'ongoing',
     });
     setShowModal(true);
@@ -98,11 +131,11 @@ export function QuanLyDuAn() {
     setFormData({
       code: project.code,
       name: project.name,
-      bu_owner: project.bu_owner || project.buOwner || '',
-      project_manager: project.project_manager || project.pm || '',
+      buOwner: project.buOwner,
+      pm: project.pm,
       budget: project.budget,
-      start_date: project.start_date || project.startDate || '',
-      end_date: project.end_date || project.endDate || '',
+      startDate: project.startDate,
+      endDate: project.endDate,
       status: project.status,
     });
     setShowModal(true);
@@ -113,57 +146,37 @@ export function QuanLyDuAn() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (deletingProject) {
-      if ((deletingProject.spent || 0) > 0) {
+      if (deletingProject.spent > 0) {
         alert(`Không thể xóa dự án "${deletingProject.name}" vì đã có chi phí phát sinh!`);
-        setShowDeleteConfirm(false);
-        setDeletingProject(null);
-        return;
-      }
-
-      try {
-        const result = await projectsAPI.delete(deletingProject.id);
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi xóa: ' + result.error);
-        }
-      } catch (error) {
-        console.error('Failed to delete:', error);
-        alert('Lỗi khi xóa dự án');
+      } else {
+        setProjects(projects.filter(p => p.id !== deletingProject.id));
       }
       setShowDeleteConfirm(false);
       setDeletingProject(null);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      if (editingProject) {
-        const result = await projectsAPI.update(editingProject.id, formData);
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi cập nhật: ' + result.error);
-          return;
-        }
-      } else {
-        const result = await projectsAPI.create(formData);
-        if (result.success) {
-          await loadData();
-        } else {
-          alert('Lỗi khi tạo mới: ' + result.error);
-          return;
-        }
-      }
-      setShowModal(false);
-    } catch (error) {
-      console.error('Failed to submit:', error);
-      alert('Lỗi khi lưu dữ liệu');
+    
+    if (editingProject) {
+      setProjects(projects.map(p =>
+        p.id === editingProject.id
+          ? { ...p, ...formData }
+          : p
+      ));
+    } else {
+      const newProject: Project = {
+        id: Date.now().toString(),
+        ...formData,
+        spent: 0,
+      };
+      setProjects([...projects, newProject]);
     }
+    
+    setShowModal(false);
   };
 
   const getStatusLabel = (status: string) => {
@@ -258,107 +271,94 @@ export function QuanLyDuAn() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E6BB8]"></div>
-            <p className="text-gray-500 mt-4">Đang tải dữ liệu...</p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã Dự Án</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Dự Án</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">BU Chủ Quản</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">PM</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ngân Sách</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tiến Độ</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã Dự Án</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Dự Án</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">BU Chủ Quản</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">PM</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ngân Sách</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tiến Độ</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredProjects.map((project) => {
+                const progress = getProgressPercentage(project.spent, project.budget);
+                return (
+                  <tr key={project.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="font-mono font-semibold text-[#1E6BB8]">{project.code}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="w-5 h-5 text-[#F7931E]" />
+                        <span className="font-medium text-gray-900">{project.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600">{project.buOwner}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-900">{project.pm}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{formatCurrency(project.budget)}</div>
+                        <div className="text-xs text-gray-500">Đã chi: {formatCurrency(project.spent)}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2 w-24">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              progress >= 90 ? 'bg-red-500' : progress >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">{progress}%</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(project.status)}`}>
+                        {getStatusLabel(project.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleEdit(project)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(project)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredProjects.map((project) => {
-                    const spent = project.spent || 0;
-                    const progress = getProgressPercentage(spent, project.budget);
-                    const buOwner = project.bu_owner || project.buOwner || '-';
-                    const pm = project.project_manager || project.pm || '-';
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-                    return (
-                      <tr key={project.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-mono font-semibold text-[#1E6BB8]">{project.code}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Briefcase className="w-5 h-5 text-[#F7931E]" />
-                            <span className="font-medium text-gray-900">{project.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-sm text-gray-600">{buOwner}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">{pm}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{formatCurrency(project.budget)}</div>
-                            <div className="text-xs text-gray-500">Đã chi: {formatCurrency(spent)}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2 w-24">
-                              <div
-                                className={`h-2 rounded-full transition-all ${
-                                  progress >= 90 ? 'bg-red-500' : progress >= 70 ? 'bg-yellow-500' : 'bg-green-500'
-                                }`}
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium text-gray-700">{progress}%</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(project.status)}`}>
-                            {getStatusLabel(project.status)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => handleEdit(project)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Chỉnh sửa"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(project)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Xóa"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredProjects.length === 0 && (
-              <div className="text-center py-12">
-                <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Không tìm thấy dự án nào</p>
-              </div>
-            )}
-          </>
+        {filteredProjects.length === 0 && (
+          <div className="text-center py-12">
+            <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">Không tìm thấy dự án nào</p>
+          </div>
         )}
       </div>
 
@@ -440,8 +440,8 @@ export function QuanLyDuAn() {
                         BU Chủ Quản
                       </label>
                       <select
-                        value={formData.bu_owner}
-                        onChange={(e) => setFormData({ ...formData, bu_owner: e.target.value })}
+                        value={formData.buOwner}
+                        onChange={(e) => setFormData({ ...formData, buOwner: e.target.value })}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                         required
                       >
@@ -457,8 +457,8 @@ export function QuanLyDuAn() {
                       </label>
                       <input
                         type="text"
-                        value={formData.project_manager}
-                        onChange={(e) => setFormData({ ...formData, project_manager: e.target.value })}
+                        value={formData.pm}
+                        onChange={(e) => setFormData({ ...formData, pm: e.target.value })}
                         placeholder="Nhập tên PM"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                         required
@@ -488,8 +488,8 @@ export function QuanLyDuAn() {
                       </label>
                       <input
                         type="date"
-                        value={formData.start_date}
-                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                        value={formData.startDate}
+                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                         required
                       />
@@ -500,8 +500,8 @@ export function QuanLyDuAn() {
                       </label>
                       <input
                         type="date"
-                        value={formData.end_date}
-                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                        value={formData.endDate}
+                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                         required
                       />

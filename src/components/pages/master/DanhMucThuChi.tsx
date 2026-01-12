@@ -1,21 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Plus, Edit2, Trash2, FolderTree, X, AlertCircle } from 'lucide-react';
-import { incomeExpenseCategoriesAPI } from '../../../services/supabaseApi';
 
 interface Category {
   id: string;
   code: string;
   name: string;
-  type: 'income' | 'expense';
+  type: 'thu' | 'chi' | 'vay' | 'hoan-ung';
   description: string;
   status: 'active' | 'inactive';
-  parent_code?: string;
-  sort_order?: number;
+  transactionCount: number;
 }
 
 export function DanhMucThuChi() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([
+    { id: '1', code: 'C01', name: 'Dịch vụ thuê ngoài', type: 'chi', description: 'Chi phí thuê dịch vụ bên ngoài', status: 'active', transactionCount: 45 },
+    { id: '2', code: 'C02', name: 'Lương & Phúc lợi', type: 'chi', description: 'Chi phí nhân sự và phúc lợi', status: 'active', transactionCount: 120 },
+    { id: '3', code: 'C03', name: 'Chi phí vận hành', type: 'chi', description: 'Chi phí điện, nước, văn phòng', status: 'active', transactionCount: 78 },
+    { id: '4', code: 'C04', name: 'Tư vấn & Kế toán', type: 'chi', description: 'Dịch vụ tư vấn và kế toán', status: 'active', transactionCount: 12 },
+    { id: '5', code: 'C05', name: 'Thiết bị & Công cụ', type: 'chi', description: 'Mua sắm thiết bị làm việc', status: 'active', transactionCount: 34 },
+    { id: '6', code: 'C06', name: 'Thuế & Phí', type: 'chi', description: 'Các khoản thuế và phí', status: 'active', transactionCount: 56 },
+    { id: '7', code: 'C07', name: 'Chi phí khác', type: 'chi', description: 'Các chi phí phát sinh khác', status: 'active', transactionCount: 23 },
+    { id: '8', code: 'T01', name: 'Doanh thu thuần', type: 'thu', description: 'Doanh thu từ hoạt động kinh doanh', status: 'active', transactionCount: 230 },
+    { id: '9', code: 'T02', name: 'Doanh thu dự phòng', type: 'thu', description: 'Doanh thu dự kiến trong tương lai', status: 'active', transactionCount: 15 },
+    { id: '10', code: 'V01', name: 'Vay đầu tư', type: 'vay', description: 'Vay vốn cho đầu tư phát triển', status: 'active', transactionCount: 8 },
+  ]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -27,39 +36,20 @@ export function DanhMucThuChi() {
   const [formData, setFormData] = useState({
     code: '',
     name: '',
-    type: 'expense' as 'income' | 'expense',
+    type: 'chi' as 'thu' | 'chi' | 'vay' | 'hoan-ung',
     description: '',
     status: 'active' as 'active' | 'inactive',
-    sort_order: 0,
   });
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const result = await incomeExpenseCategoriesAPI.getAll();
-      if (result.success && result.data) {
-        setCategories(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const filteredCategories = categories.filter(category => {
-    const matchesSearch =
+    const matchesSearch = 
       category.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (category.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-
+      category.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesType = filterType === 'all' || category.type === filterType;
     const matchesStatus = filterStatus === 'all' || category.status === filterStatus;
-
+    
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -68,10 +58,9 @@ export function DanhMucThuChi() {
     setFormData({
       code: '',
       name: '',
-      type: 'expense',
+      type: 'chi',
       description: '',
       status: 'active',
-      sort_order: 0,
     });
     setShowModal(true);
   };
@@ -82,9 +71,8 @@ export function DanhMucThuChi() {
       code: category.code,
       name: category.name,
       type: category.type,
-      description: category.description || '',
+      description: category.description,
       status: category.status,
-      sort_order: category.sort_order || 0,
     });
     setShowModal(true);
   };
@@ -94,77 +82,58 @@ export function DanhMucThuChi() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (deletingCategory) {
-      try {
-        const result = await incomeExpenseCategoriesAPI.delete(deletingCategory.id);
-        if (result.success) {
-          await loadCategories();
-        } else {
-          alert(`Lỗi: ${result.error || 'Không thể xóa danh mục'}`);
-        }
-      } catch (error) {
-        console.error('Delete error:', error);
-        alert('Có lỗi xảy ra khi xóa danh mục');
+      if (deletingCategory.transactionCount > 0) {
+        alert(`Không thể xóa danh mục "${deletingCategory.name}" vì đã có ${deletingCategory.transactionCount} giao dịch liên kết!`);
+      } else {
+        setCategories(categories.filter(c => c.id !== deletingCategory.id));
       }
       setShowDeleteConfirm(false);
       setDeletingCategory(null);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      if (editingCategory) {
-        const result = await incomeExpenseCategoriesAPI.update(editingCategory.id, formData);
-        if (result.success) {
-          await loadCategories();
-          setShowModal(false);
-        } else {
-          alert(`Lỗi: ${result.error || 'Không thể cập nhật'}`);
-        }
-      } else {
-        const result = await incomeExpenseCategoriesAPI.create(formData);
-        if (result.success) {
-          await loadCategories();
-          setShowModal(false);
-        } else {
-          alert(`Lỗi: ${result.error || 'Không thể tạo mới'}`);
-        }
-      }
-    } catch (error) {
-      console.error('Submit error:', error);
-      alert('Có lỗi xảy ra');
+    
+    if (editingCategory) {
+      setCategories(categories.map(c =>
+        c.id === editingCategory.id
+          ? { ...c, ...formData }
+          : c
+      ));
+    } else {
+      const newCategory: Category = {
+        id: Date.now().toString(),
+        ...formData,
+        transactionCount: 0,
+      };
+      setCategories([...categories, newCategory]);
     }
+    
+    setShowModal(false);
   };
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      'expense': 'Chi',
-      'income': 'Thu',
+      'chi': 'Chi',
+      'thu': 'Thu',
+      'vay': 'Vay',
+      'hoan-ung': 'Hoàn ứng'
     };
     return labels[type] || type;
   };
 
   const getTypeBadgeColor = (type: string) => {
     const colors: Record<string, string> = {
-      'expense': 'bg-red-100 text-red-700',
-      'income': 'bg-green-100 text-green-700',
+      'chi': 'bg-red-100 text-red-700',
+      'thu': 'bg-green-100 text-green-700',
+      'vay': 'bg-purple-100 text-purple-700',
+      'hoan-ung': 'bg-blue-100 text-blue-700'
     };
     return colors[type] || 'bg-gray-100 text-gray-700';
   };
-
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E6BB8] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-8">
@@ -197,8 +166,10 @@ export function DanhMucThuChi() {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent"
             >
               <option value="all">Tất cả loại</option>
-              <option value="expense">Chi</option>
-              <option value="income">Thu</option>
+              <option value="chi">Chi</option>
+              <option value="thu">Thu</option>
+              <option value="vay">Vay</option>
+              <option value="hoan-ung">Hoàn ứng</option>
             </select>
 
             {/* Filter Status */}
@@ -234,6 +205,7 @@ export function DanhMucThuChi() {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Danh Mục</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Loại</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mô Tả</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Giao Dịch</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
               </tr>
@@ -254,6 +226,9 @@ export function DanhMucThuChi() {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-gray-600">{category.description}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">{category.transactionCount}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -329,7 +304,7 @@ export function DanhMucThuChi() {
                         type="text"
                         value={formData.code}
                         onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                        placeholder="EXP_SALARY, REV_SERVICE..."
+                        placeholder="C01, T01, V01..."
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                         required
                       />
@@ -344,8 +319,10 @@ export function DanhMucThuChi() {
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
                         required
                       >
-                        <option value="expense">Chi</option>
-                        <option value="income">Thu</option>
+                        <option value="chi">Chi</option>
+                        <option value="thu">Thu</option>
+                        <option value="vay">Vay</option>
+                        <option value="hoan-ung">Hoàn ứng</option>
                       </select>
                     </div>
                   </div>
@@ -374,36 +351,23 @@ export function DanhMucThuChi() {
                       placeholder="Giải thích chi tiết mục đích sử dụng..."
                       rows={3}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all resize-none"
+                      required
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
-                        Thứ Tự Hiển Thị
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.sort_order}
-                        onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                        placeholder="0"
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
-                        Trạng Thái
-                      </label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
-                        required
-                      >
-                        <option value="active">Đang hoạt động</option>
-                        <option value="inactive">Ngừng sử dụng</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
+                      Trạng Thái
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
+                      required
+                    >
+                      <option value="active">Đang hoạt động</option>
+                      <option value="inactive">Ngừng sử dụng</option>
+                    </select>
                   </div>
                 </div>
               </form>
@@ -422,7 +386,7 @@ export function DanhMucThuChi() {
                 form="category-form"
                 className="px-8 py-2.5 bg-[#1E6BB8] hover:bg-[#1557A0] text-white rounded-lg transition-colors font-medium min-w-[140px]"
               >
-                {editingCategory ? 'Cập nhật' : 'Tạo mới'}
+                {editingCategory ? 'Xác nhận cập nhật' : 'Xác nhận tạo mới'}
               </button>
             </div>
           </div>
@@ -443,7 +407,7 @@ export function DanhMucThuChi() {
                   <p className="text-sm text-gray-600">Bạn có chắc chắn muốn xóa danh mục này?</p>
                 </div>
               </div>
-
+              
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <p className="text-sm text-gray-700">
                   <span className="font-semibold">Mã:</span> {deletingCategory.code}
@@ -451,7 +415,18 @@ export function DanhMucThuChi() {
                 <p className="text-sm text-gray-700">
                   <span className="font-semibold">Tên:</span> {deletingCategory.name}
                 </p>
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">Giao dịch liên kết:</span> {deletingCategory.transactionCount}
+                </p>
               </div>
+
+              {deletingCategory.transactionCount > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Danh mục này đã có {deletingCategory.transactionCount} giao dịch liên kết. Không thể xóa!
+                  </p>
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button
