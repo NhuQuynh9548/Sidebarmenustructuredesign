@@ -3,6 +3,7 @@ import { Search, Plus, Eye, Edit2, Trash2, DollarSign, X, AlertCircle, ChevronLe
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DatePicker } from '../DatePicker';
+import { useTransactions } from '../../hooks/useTransactions';
 
 interface AllocationPreview {
   bu: string;
@@ -103,7 +104,39 @@ export function QuanLyThuChi() {
     }
   };
 
-  const [transactions, setTransactions] = useState<Transaction[]>([
+  // Use database hook for transactions
+  const {
+    transactions: dbTransactions,
+    loading: dbLoading,
+    error: dbError,
+    loadTransactions,
+    createTransaction: dbCreateTransaction,
+    updateTransaction: dbUpdateTransaction,
+    deleteTransaction: dbDeleteTransaction
+  } = useTransactions();
+
+  // Normalize database transactions to UI format
+  const transactions = dbTransactions.map(txn => ({
+    id: txn.id,
+    transactionCode: txn.transactionCode || '',
+    transactionDate: txn.transactionDate || '',
+    transactionType: txn.transactionType || 'income',
+    category: txn.category || '',
+    project: '',
+    objectType: 'partner' as const,
+    objectName: txn.objectName || '',
+    paymentMethod: txn.paymentMethod || '',
+    businessUnit: txn.businessUnit || '',
+    amount: txn.amount || 0,
+    costAllocation: 'direct' as const,
+    attachments: txn.attachments || 0,
+    attachedFiles: [],
+    paymentStatus: txn.paymentStatus || 'unpaid',
+    approvalStatus: txn.approvalStatus || 'draft',
+    description: txn.description || '',
+  }));
+
+  const _mockTransactions = [
     {
       id: '1',
       transactionCode: 'T0125_01',
@@ -292,7 +325,7 @@ export function QuanLyThuChi() {
       approvalStatus: 'pending',
       description: 'Tạm ứng cho dự án tháng 3'
     },
-  ]);
+  ];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -636,17 +669,19 @@ export function QuanLyThuChi() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingTransaction) {
-      setTransactions(transactions.filter(t => t.id !== deletingTransaction.id));
-      setShowDeleteConfirm(false);
-      setDeletingTransaction(null);
+      const result = await dbDeleteTransaction(deletingTransaction.id);
+      if (result.success) {
+        setShowDeleteConfirm(false);
+        setDeletingTransaction(null);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.amount || formData.amount <= 0) {
       alert('Số tiền phải lớn hơn 0');
@@ -662,22 +697,38 @@ export function QuanLyThuChi() {
       alert('Vui lòng chọn quy tắc phân bổ cho chi phí gián tiếp');
       return;
     }
-    
+
+    // Prepare data for database
+    const dbData = {
+      transactionDate: formData.transactionDate,
+      transactionType: formData.transactionType,
+      category: formData.category,
+      objectName: formData.objectName,
+      objectType: formData.objectType,
+      paymentMethod: formData.paymentMethod,
+      businessUnit: formData.businessUnit,
+      amount: formData.amount,
+      description: formData.description,
+      paymentStatus: formData.paymentStatus,
+      approvalStatus: formData.approvalStatus,
+      attachments: formData.attachments || 0,
+    };
+
     if (modalMode === 'create') {
-      const newTransaction: Transaction = {
-        id: Date.now().toString(),
-        ...formData as Transaction,
-      };
-      setTransactions([newTransaction, ...transactions]);
+      const result = await dbCreateTransaction(dbData);
+      if (result.success) {
+        setModalMode(null);
+        setSelectedTransaction(null);
+        setUploadedFiles([]);
+      }
     } else if (modalMode === 'edit' && selectedTransaction) {
-      setTransactions(transactions.map(t =>
-        t.id === selectedTransaction.id ? { ...t, ...formData } as Transaction : t
-      ));
+      const result = await dbUpdateTransaction(selectedTransaction.id, dbData);
+      if (result.success) {
+        setModalMode(null);
+        setSelectedTransaction(null);
+        setUploadedFiles([]);
+      }
     }
-    
-    setModalMode(null);
-    setSelectedTransaction(null);
-    setUploadedFiles([]);
   };
 
   const handleSubmitForApproval = () => {

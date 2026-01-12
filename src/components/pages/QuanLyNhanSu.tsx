@@ -3,6 +3,7 @@ import { Search, Plus, Eye, Edit2, Trash2, Users, X, AlertCircle, ChevronLeft, C
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useDraggableColumns, DraggableColumnHeader, ColumnConfig } from '../hooks/useDraggableColumns';
+import { useEmployees } from '../../hooks/useEmployees';
 
 interface Employee {
   id: string;
@@ -42,23 +43,33 @@ export function QuanLyNhanSu() {
     userId: 'user_001' // In real app, get from auth context
   });
 
-  const [employees, setEmployees] = useState<Employee[]>([
-    { id: '1', employeeId: 'EMP001', fullName: 'Nguyễn Văn An', email: 'an.nguyen@bluebolt.vn', phone: '0901234567', businessUnit: 'BlueBolt Software', specialization: 'Developer', level: 'Trưởng nhóm', joinDate: '15/01/2023', workStatus: 'working', birthDate: '12/05/1990', idCard: '001234567890', address: '123 Nguyễn Huệ, Q1, TP.HCM' },
-    { id: '2', employeeId: 'EMP002', fullName: 'Trần Thị Bình', email: 'binh.tran@bluebolt.vn', phone: '0901234568', businessUnit: 'BlueBolt R&D', specialization: 'AI Engineer', level: 'Nhân viên', joinDate: '01/03/2023', workStatus: 'working', birthDate: '20/08/1995', idCard: '001234567891', address: '456 Lê Lợi, Q3, TP.HCM' },
-    { id: '3', employeeId: 'EMP003', fullName: 'Lê Hoàng Cường', email: 'cuong.le@bluebolt.vn', phone: '0901234569', businessUnit: 'BlueBolt G&A', specialization: 'Kế toán', level: 'Trưởng phòng', joinDate: '10/02/2022', workStatus: 'working', birthDate: '15/03/1988', idCard: '001234567892', address: '789 Trần Hưng Đạo, Q5, TP.HCM' },
-    { id: '4', employeeId: 'EMP004', fullName: 'Phạm Minh Đức', email: 'duc.pham@bluebolt.vn', phone: '0901234570', businessUnit: 'BlueBolt Services', specialization: 'BA', level: 'Nhân viên', joinDate: '20/06/2023', workStatus: 'probation', birthDate: '25/11/1996', idCard: '001234567893', address: '234 Võ Văn Tần, Q3, TP.HCM' },
-    { id: '5', employeeId: 'EMP005', fullName: 'Hoàng Thị Hoa', email: 'hoa.hoang@bluebolt.vn', phone: '0901234571', businessUnit: 'BlueBolt Academy', specialization: 'Đào tạo (Trainer)', level: 'Quản lý (Manager)', joinDate: '05/04/2021', workStatus: 'working', birthDate: '10/07/1987', idCard: '001234567894', address: '567 Nguyễn Thị Minh Khai, Q1, TP.HCM' },
-    { id: '6', employeeId: 'EMP006', fullName: 'Vũ Quang Hải', email: 'hai.vu@bluebolt.vn', phone: '0901234572', businessUnit: 'BlueBolt Software', specialization: 'Fullstack', level: 'Trưởng nhóm', joinDate: '12/08/2022', workStatus: 'working', birthDate: '18/09/1991', idCard: '001234567895', address: '890 Điện Biên Phủ, Q3, TP.HCM' },
-    { id: '7', employeeId: 'EMP007', fullName: 'Đỗ Thu Hương', email: 'huong.do@bluebolt.vn', phone: '0901234573', businessUnit: 'BlueBolt R&D', specialization: 'Data Analyst', level: 'Nhân viên', joinDate: '25/09/2023', workStatus: 'working', birthDate: '30/12/1994', idCard: '001234567896', address: '123 Lý Tự Trọng, Q1, TP.HCM' },
-    { id: '8', employeeId: 'EMP008', fullName: 'Bùi Văn Kiên', email: 'kien.bui@bluebolt.vn', phone: '0901234574', businessUnit: 'BlueBolt Services', specialization: 'PM', level: 'Quản lý (Manager)', joinDate: '18/11/2020', workStatus: 'working', birthDate: '05/02/1985', idCard: '001234567897', address: '456 Pasteur, Q1, TP.HCM' },
-    { id: '9', employeeId: 'EMP009', fullName: 'Ngô Thị Lan', email: 'lan.ngo@bluebolt.vn', phone: '0901234575', businessUnit: 'BlueBolt Software', specialization: 'QA/QC', level: 'Nhân viên', joinDate: '30/05/2023', workStatus: 'probation', birthDate: '22/04/1997', idCard: '001234567898', address: '789 Hai Bà Trưng, Q1, TP.HCM' },
-    { id: '10', employeeId: 'EMP010', fullName: 'Trịnh Đức Minh', email: 'minh.trinh@bluebolt.vn', phone: '0901234576', businessUnit: 'BlueBolt G&A', specialization: 'Sales', level: 'Trưởng nhóm', joinDate: '07/01/2023', workStatus: 'working', birthDate: '14/06/1992', idCard: '001234567899', address: '234 Nam Kỳ Khởi Nghĩa, Q3, TP.HCM' },
-    { id: '11', employeeId: 'EMP011', fullName: 'Phan Thị Ngọc', email: 'ngoc.phan@bluebolt.vn', phone: '0901234577', businessUnit: 'BlueBolt Academy', specialization: 'Designer', level: 'Nhân viên', joinDate: '14/07/2022', workStatus: 'working', birthDate: '08/10/1993', idCard: '001234567900', address: '567 Cách Mạng Tháng 8, Q10, TP.HCM' },
-    { id: '12', employeeId: 'EMP012', fullName: 'Đinh Văn Phong', email: 'phong.dinh@bluebolt.vn', phone: '0901234578', businessUnit: 'BlueBolt Services', specialization: 'DevOps', level: 'Trưởng nhóm', joinDate: '22/03/2021', workStatus: 'working', birthDate: '16/01/1989', idCard: '001234567901', address: '890 Lê Văn Sỹ, Q3, TP.HCM' },
-    { id: '13', employeeId: 'EMP013', fullName: 'Lý Thị Quỳnh', email: 'quynh.ly@bluebolt.vn', phone: '0901234579', businessUnit: 'BlueBolt Software', specialization: 'Developer', level: 'Nhân viên', joinDate: '03/10/2023', workStatus: 'probation', birthDate: '28/02/1998', idCard: '001234567902', address: '123 Nguyễn Đình Chiểu, Q3, TP.HCM' },
-    { id: '14', employeeId: 'EMP014', fullName: 'Cao Minh Tuấn', email: 'tuan.cao@bluebolt.vn', phone: '0901234580', businessUnit: 'BlueBolt R&D', specialization: 'AI Engineer', level: 'Trưởng phòng', joinDate: '28/02/2020', workStatus: 'working', birthDate: '11/09/1986', idCard: '001234567903', address: '456 Hoàng Văn Thụ, Q Tân Bình, TP.HCM' },
-    { id: '15', employeeId: 'EMP015', fullName: 'Đặng Thị Vân', email: 'van.dang@bluebolt.vn', phone: '0901234581', businessUnit: 'BlueBolt G&A', specialization: 'Marketing', level: 'Nhân viên', joinDate: '16/04/2022', workStatus: 'resigned', birthDate: '19/03/1994', idCard: '001234567904', address: '789 Cộng Hòa, Q Tân Bình, TP.HCM' },
-  ]);
+  // Use database hook for employees
+  const {
+    employees: dbEmployees,
+    loading: dbLoading,
+    error: dbError,
+    loadEmployees,
+    createEmployee,
+    updateEmployee,
+    deleteEmployee
+  } = useEmployees();
+
+  // Normalize database employees to UI format
+  const employees = dbEmployees.map(emp => ({
+    id: emp.id,
+    employeeId: emp.employeeId || '',
+    fullName: emp.employeeName || '',
+    email: emp.email || '',
+    phone: emp.phone || '',
+    businessUnit: emp.businessUnit || '',
+    specialization: emp.position || '',
+    level: emp.department || '',
+    joinDate: emp.hireDate || '',
+    workStatus: emp.status === 'active' ? 'working' as const : emp.status === 'inactive' ? 'resigned' as const : 'probation' as const,
+    birthDate: '',
+    idCard: '',
+    address: '',
+  }));
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -215,37 +226,45 @@ export function QuanLyNhanSu() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingEmployee) {
-      setEmployees(employees.map(emp =>
-        emp.id === deletingEmployee.id
-          ? { ...emp, workStatus: 'resigned' as const }
-          : emp
-      ));
-      setShowDeleteConfirm(false);
-      setDeletingEmployee(null);
+      const result = await deleteEmployee(deletingEmployee.id);
+      if (result.success) {
+        setShowDeleteConfirm(false);
+        setDeletingEmployee(null);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Transform UI data to database format
+    const dbData = {
+      employeeId: formData.employeeId,
+      employeeName: formData.fullName,
+      businessUnit: formData.businessUnit,
+      position: formData.specialization,
+      department: formData.level,
+      email: formData.email,
+      phone: formData.phone,
+      hireDate: formData.joinDate,
+      status: formData.workStatus === 'working' ? 'active' : formData.workStatus === 'resigned' ? 'inactive' : 'probation',
+    };
+
     if (modalMode === 'create') {
-      const newEmployee: Employee = {
-        id: Date.now().toString(),
-        ...formData,
-      };
-      setEmployees([...employees, newEmployee]);
+      const result = await createEmployee(dbData);
+      if (result.success) {
+        setModalMode(null);
+        setSelectedEmployee(null);
+      }
     } else if (modalMode === 'edit' && selectedEmployee) {
-      setEmployees(employees.map(emp =>
-        emp.id === selectedEmployee.id
-          ? { ...emp, ...formData }
-          : emp
-      ));
+      const result = await updateEmployee(selectedEmployee.id, dbData);
+      if (result.success) {
+        setModalMode(null);
+        setSelectedEmployee(null);
+      }
     }
-    
-    setModalMode(null);
-    setSelectedEmployee(null);
   };
 
   const getStatusLabel = (status: string) => {
