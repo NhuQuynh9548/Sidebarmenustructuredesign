@@ -116,25 +116,37 @@ export function QuanLyThuChi() {
   } = useTransactions();
 
   // Normalize database transactions to UI format
-  const transactions = dbTransactions.map(txn => ({
-    id: txn.id,
-    transactionCode: txn.transactionCode || '',
-    transactionDate: txn.transactionDate || '',
-    transactionType: txn.transactionType || 'income',
-    category: txn.category || '',
-    project: '',
-    objectType: 'partner' as const,
-    objectName: txn.objectName || '',
-    paymentMethod: txn.paymentMethod || '',
-    businessUnit: txn.businessUnit || '',
-    amount: txn.amount || 0,
-    costAllocation: 'direct' as const,
-    attachments: txn.attachments || 0,
-    attachedFiles: [],
-    paymentStatus: txn.paymentStatus || 'unpaid',
-    approvalStatus: txn.approvalStatus || 'draft',
-    description: txn.description || '',
-  }));
+  const transactions: Transaction[] = dbTransactions.map(txn => {
+    // Convert date from YYYY-MM-DD to DD/MM/YYYY
+    let formattedDate = txn.transactionDate || '';
+    if (formattedDate.includes('-')) {
+      const [year, month, day] = formattedDate.split('-');
+      formattedDate = `${day}/${month}/${year}`;
+    }
+
+    return {
+      id: txn.id,
+      transactionCode: txn.transactionCode || '',
+      transactionDate: formattedDate,
+      transactionType: (txn.transactionType || 'income') as 'income' | 'expense' | 'loan',
+      category: txn.category || '',
+      project: txn.project || '',
+      objectType: (txn.objectType || 'partner') as 'partner' | 'employee',
+      objectName: txn.objectName || '',
+      paymentMethod: txn.paymentMethod || '',
+      businessUnit: txn.businessUnit || '',
+      amount: txn.amount || 0,
+      costAllocation: (txn.costAllocation || 'direct') as 'direct' | 'indirect',
+      allocationRule: txn.allocationRule,
+      attachments: txn.attachments || 0,
+      attachedFiles: [],
+      paymentStatus: (txn.paymentStatus || 'unpaid') as 'paid' | 'unpaid',
+      approvalStatus: (txn.approvalStatus || 'draft') as 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled',
+      rejectionReason: txn.rejectionReason,
+      description: txn.description || '',
+    };
+  });
+
 
   const _mockTransactions = [
     {
@@ -699,8 +711,15 @@ export function QuanLyThuChi() {
     }
 
     // Prepare data for database
+    // Convert date from DD/MM/YYYY to YYYY-MM-DD for database
+    let dbDate = formData.transactionDate;
+    if (dbDate.includes('/')) {
+      const [day, month, year] = dbDate.split('/');
+      dbDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
     const dbData = {
-      transactionDate: formData.transactionDate,
+      transactionDate: dbDate,
       transactionType: formData.transactionType,
       category: formData.category,
       objectName: formData.objectName,
@@ -712,6 +731,9 @@ export function QuanLyThuChi() {
       paymentStatus: formData.paymentStatus,
       approvalStatus: formData.approvalStatus,
       attachments: formData.attachments || 0,
+      project: formData.project,
+      costAllocation: formData.costAllocation,
+      allocationRule: formData.allocationRule,
     };
 
     if (modalMode === 'create') {
@@ -1087,6 +1109,18 @@ export function QuanLyThuChi() {
         return <td key={column.id} className={`px-4 py-3 ${alignClass}`}>-</td>;
     }
   };
+
+  // Show loading state
+  if (dbLoading && transactions.length === 0) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">Đang tải dữ liệu giao dịch...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
