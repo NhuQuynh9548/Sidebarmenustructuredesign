@@ -82,13 +82,38 @@ export const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 
 ---
 
-## Bước 5: Deploy Edge Function
+## Bước 5: Tạo Database Schema (Tùy chọn)
+
+Nếu bạn muốn sử dụng **Postgres Database** thay vì KV Store:
+
+1. Mở Supabase Dashboard của bạn
+2. Vào **SQL Editor** (icon </> ở sidebar bên trái)
+3. Click **New Query**
+4. Mở file `supabase_schema.sql` trong project
+5. Copy toàn bộ nội dung
+6. Paste vào SQL Editor
+7. Click **Run** (hoặc nhấn Ctrl+Enter / Cmd+Enter)
+8. Đợi vài giây để migration hoàn tất
+
+File SQL này sẽ tạo:
+- 6 bảng chính: `business_units`, `employees`, `partners`, `transactions`, `users`, `master_data`
+- Row Level Security (RLS) policies
+- Indexes để tối ưu performance
+- Triggers tự động cập nhật `updated_at`
+- Dữ liệu mẫu để test
+- Views cho analytics
+
+> **Lưu ý**: Bước này là **tùy chọn**. Hiện tại ứng dụng đang dùng **KV Store** (key-value storage) nên không cần tạo tables. Nhưng nếu sau này bạn muốn migrate sang Postgres, hãy chạy file SQL này.
+
+---
+
+## Bước 6: Deploy Edge Function
 
 Ứng dụng này sử dụng **Supabase Edge Functions** để xử lý API. Bạn cần deploy function lên Supabase của bạn.
 
 > **Lưu ý**: Edge Function code nằm trong thư mục `supabase/functions/make-server-393f5b29/`
 
-### 5.1. Cài đặt Supabase CLI
+### 6.1. Cài đặt Supabase CLI
 
 **Trên macOS**:
 ```bash
@@ -106,7 +131,7 @@ scoop install supabase
 brew install supabase/tap/supabase
 ```
 
-### 5.2. Login vào Supabase
+### 6.2. Login vào Supabase
 
 ```bash
 supabase login
@@ -114,7 +139,7 @@ supabase login
 
 Một trình duyệt sẽ mở ra để bạn đăng nhập. Sau khi đăng nhập thành công, quay lại terminal.
 
-### 5.3. Link Project
+### 6.3. Link Project
 
 ```bash
 supabase link --project-ref xxxxxxxxxxx
@@ -124,7 +149,7 @@ supabase link --project-ref xxxxxxxxxxx
 
 Khi được hỏi database password, nhập password bạn đã tạo ở Bước 1.
 
-### 5.4. Deploy Edge Function
+### 6.4. Deploy Edge Function
 
 ```bash
 supabase functions deploy make-server-393f5b29 --no-verify-jwt
@@ -142,9 +167,9 @@ URL: https://xxxxxxxxxxx.supabase.co/functions/v1/make-server-393f5b29
 
 ---
 
-## Bước 6: Test Kết Nối
+## Bước 7: Test Kết Nối
 
-### 6.1. Test Edge Function
+### 7.1. Test Edge Function
 
 Mở trình duyệt hoặc dùng curl để test:
 
@@ -159,7 +184,7 @@ Nếu thành công, bạn sẽ nhận được:
 {"status":"ok"}
 ```
 
-### 6.2. Khởi động ứng dụng
+### 7.2. Khởi động ứng dụng
 
 ```bash
 npm install
@@ -168,7 +193,7 @@ npm run dev
 
 Ứng dụng sẽ chạy tại `http://localhost:5173`
 
-### 6.3. Test chức năng
+### 7.3. Test chức năng
 
 1. Đăng nhập với một trong các tài khoản demo:
    - **Email**: `ceo@bluebolt.vn`
@@ -178,7 +203,7 @@ npm run dev
 
 ---
 
-## Bước 7: Seed Dữ Liệu Mẫu (Tùy chọn)
+## Bước 8: Seed Dữ Liệu Mẫu (Tùy chọn)
 
 Để có dữ liệu mẫu ban đầu, bạn có thể gọi endpoint seed:
 

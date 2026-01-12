@@ -16,6 +16,8 @@ Chào mừng bạn đến với BlueBolt Management System!
 | `README.md` | Tổng quan về project, tính năng, công nghệ |
 | `QUICK_START_SUPABASE.md` | Hướng dẫn nhanh kết nối Supabase (5 phút) |
 | `HUONG_DAN_KET_NOI_SUPABASE.md` | Hướng dẫn chi tiết từng bước với troubleshooting |
+| `DATABASE_SETUP.md` | Hướng dẫn setup Postgres Database (tùy chọn) |
+| `supabase_schema.sql` | File SQL để tạo tables trong Supabase (tùy chọn) |
 | `.env.example` | Template file cấu hình (copy thành `.env`) |
 | `deploy-edge-function.sh` | Script tự động deploy (macOS/Linux) |
 | `deploy-edge-function.bat` | Script tự động deploy (Windows) |
