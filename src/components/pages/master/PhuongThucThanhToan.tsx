@@ -6,11 +6,9 @@ interface PaymentMethod {
   id: string;
   code: string;
   name: string;
-  type: string;
-  accountInfo?: string;
-  account_info?: string;
+  description: string;
+  account_info?: any;
   status: 'active' | 'inactive';
-  transactionCount?: number;
   transaction_count?: number;
 }
 
@@ -27,7 +25,7 @@ export function PhuongThucThanhToan() {
   const [formData, setFormData] = useState({
     code: '',
     name: '',
-    type: '',
+    description: '',
     account_info: '',
     status: 'active' as 'active' | 'inactive',
   });
@@ -53,13 +51,13 @@ export function PhuongThucThanhToan() {
   };
 
   const filteredMethods = methods.filter(method => {
-    const matchesSearch = 
+    const matchesSearch =
       method.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       method.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      method.type.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      (method.description && method.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
     const matchesStatus = filterStatus === 'all' || method.status === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -68,8 +66,8 @@ export function PhuongThucThanhToan() {
     setFormData({
       code: '',
       name: '',
-      type: '',
-      accountInfo: '',
+      description: '',
+      account_info: '',
       status: 'active',
     });
     setShowModal(true);
@@ -77,11 +75,14 @@ export function PhuongThucThanhToan() {
 
   const handleEdit = (method: PaymentMethod) => {
     setEditingMethod(method);
+    const accountInfo = typeof method.account_info === 'string'
+      ? method.account_info
+      : JSON.stringify(method.account_info || {});
     setFormData({
       code: method.code,
       name: method.name,
-      type: method.type,
-      account_info: method.account_info || method.accountInfo || '',
+      description: method.description || '',
+      account_info: accountInfo,
       status: method.status,
     });
     setShowModal(true);
@@ -94,7 +95,7 @@ export function PhuongThucThanhToan() {
 
   const confirmDelete = async () => {
     if (deletingMethod) {
-      const txCount = deletingMethod.transaction_count || deletingMethod.transactionCount || 0;
+      const txCount = deletingMethod.transaction_count || 0;
       if (txCount > 0) {
         alert(`Không thể xóa phương thức "${deletingMethod.name}" vì đã có ${txCount} giao dịch!`);
         setShowDeleteConfirm(false);
@@ -208,8 +209,7 @@ export function PhuongThucThanhToan() {
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mã</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tên Phương Thức</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Loại Thanh Toán</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Thông Tin Tài Khoản</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mô Tả</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Giao Dịch</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng Thái</th>
                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao Tác</th>
@@ -228,13 +228,10 @@ export function PhuongThucThanhToan() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{method.type}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{method.account_info || method.accountInfo || '-'}</span>
+                        <span className="text-sm text-gray-600">{method.description || '-'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">{method.transaction_count || method.transactionCount || 0}</span>
+                        <span className="text-sm font-medium text-gray-900">{method.transaction_count || 0}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -349,29 +346,28 @@ export function PhuongThucThanhToan() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
-                      Loại Thanh Toán
+                      Mô Tả
                     </label>
-                    <input
-                      type="text"
-                      value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      placeholder="Ví dụ: Financial Transfer"
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all"
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Mô tả chi tiết về phương thức thanh toán..."
+                      rows={2}
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all resize-none"
                       required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase">
-                      Số Tài Khoản / Thông Tin Đích
+                      Thông Tin Bổ Sung
                     </label>
                     <textarea
                       value={formData.account_info}
                       onChange={(e) => setFormData({ ...formData, account_info: e.target.value })}
-                      placeholder="Thông tin chi tiết về tài khoản..."
+                      placeholder="Thông tin chi tiết (JSON format hoặc text)..."
                       rows={3}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1E6BB8] focus:border-transparent focus:bg-white transition-all resize-none"
-                      required
                     />
                   </div>
                 </div>
@@ -421,14 +417,14 @@ export function PhuongThucThanhToan() {
                   <span className="font-semibold">Tên:</span> {deletingMethod.name}
                 </p>
                 <p className="text-sm text-gray-700">
-                  <span className="font-semibold">Giao dịch:</span> {deletingMethod.transactionCount}
+                  <span className="font-semibold">Giao dịch:</span> {deletingMethod.transaction_count || 0}
                 </p>
               </div>
 
-              {deletingMethod.transactionCount > 0 && (
+              {(deletingMethod.transaction_count || 0) > 0 && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                   <p className="text-sm text-yellow-800">
-                    ⚠️ Phương thức này đã có {deletingMethod.transactionCount} giao dịch. Không thể xóa!
+                    ⚠️ Phương thức này đã có {deletingMethod.transaction_count} giao dịch. Không thể xóa!
                   </p>
                 </div>
               )}

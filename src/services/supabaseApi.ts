@@ -708,7 +708,91 @@ export const costAllocationRulesAPI = createCRUDAPI('cost_allocation_rules');
 export const projectsAPI = createCRUDAPI('projects');
 export const employeeLevelsAPI = createCRUDAPI('employee_levels');
 export const specializationsRolesAPI = createCRUDAPI('specializations_roles');
-export const paymentMethodsAPI = createCRUDAPI('payment_methods');
+
+// Custom Payment Methods API with transaction count
+export const paymentMethodsAPI = {
+  getAll: async (): Promise<ApiResponse> => {
+    try {
+      // Get payment methods with transaction count
+      const { data, error } = await supabase.rpc('get_payment_methods_with_count');
+
+      if (error) {
+        // Fallback to basic query if RPC function doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('payment_methods')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (fallbackError) throw fallbackError;
+        return { success: true, data: fallbackData };
+      }
+
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  getById: async (id: string): Promise<ApiResponse> => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  create: async (payload: any): Promise<ApiResponse> => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  update: async (id: string, payload: any): Promise<ApiResponse> => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  delete: async (id: string): Promise<ApiResponse> => {
+    try {
+      const { error } = await supabase
+        .from('payment_methods')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+};
 
 // SYSTEM ADMINISTRATION APIs
 export const systemUsersAPI = createCRUDAPI('system_users');
