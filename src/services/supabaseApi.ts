@@ -123,13 +123,16 @@ const transformTransactionToDB = (txn: any) => {
   if (txn.transactionCode !== undefined) dbData.transaction_code = txn.transactionCode;
   if (txn.transactionDate !== undefined) dbData.transaction_date = txn.transactionDate;
   if (txn.type !== undefined) dbData.type = txn.type;
+  if (txn.transactionType !== undefined) dbData.type = txn.transactionType;
   if (txn.businessUnit !== undefined) dbData.business_unit = txn.businessUnit;
   if (txn.category !== undefined) dbData.category = txn.category;
   if (txn.amount !== undefined) dbData.amount = txn.amount;
   if (txn.description !== undefined) dbData.description = txn.description;
   if (txn.partnerName !== undefined) dbData.partner_name = txn.partnerName;
+  if (txn.objectName !== undefined) dbData.partner_name = txn.objectName;
   if (txn.paymentMethod !== undefined) dbData.payment_method = txn.paymentMethod;
   if (txn.status !== undefined) dbData.status = txn.status;
+  if (txn.paymentStatus !== undefined) dbData.status = txn.paymentStatus;
   if (txn.createdBy !== undefined) dbData.created_by = txn.createdBy;
   return dbData;
 };
@@ -590,6 +593,124 @@ export const masterDataAPI = {
   },
 };
 
+// Generic CRUD API creator
+const createCRUDAPI = (tableName: string) => ({
+  getAll: async (): Promise<ApiResponse> => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  getById: async (id: string): Promise<ApiResponse> => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  create: async (payload: any): Promise<ApiResponse> => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  update: async (id: string, payload: any): Promise<ApiResponse> => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  delete: async (id: string): Promise<ApiResponse> => {
+    try {
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+});
+
+// MASTERDATA APIs
+export const incomeExpenseCategoriesAPI = createCRUDAPI('income_expense_categories');
+export const costAllocationRulesAPI = createCRUDAPI('cost_allocation_rules');
+export const projectsAPI = createCRUDAPI('projects');
+export const employeeLevelsAPI = createCRUDAPI('employee_levels');
+export const specializationsRolesAPI = createCRUDAPI('specializations_roles');
+export const paymentMethodsAPI = createCRUDAPI('payment_methods');
+
+// SYSTEM ADMINISTRATION APIs
+export const systemUsersAPI = createCRUDAPI('system_users');
+export const rolesAPI = createCRUDAPI('roles');
+export const permissionsAPI = createCRUDAPI('permissions');
+export const rolePermissionsAPI = createCRUDAPI('role_permissions');
+export const userRolesAPI = createCRUDAPI('user_roles');
+export const securitySettingsAPI = createCRUDAPI('security_settings');
+export const systemLogsAPI = {
+  ...createCRUDAPI('system_logs'),
+  log: async (logData: {
+    user_id?: string;
+    action: string;
+    module: string;
+    description?: string;
+    metadata?: any;
+    ip_address?: string;
+    user_agent?: string;
+  }): Promise<ApiResponse> => {
+    try {
+      const { data, error } = await supabase
+        .from('system_logs')
+        .insert([logData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+};
+
 export const dashboardAPI = {
   getData: async (filters?: any): Promise<ApiResponse> => {
     try {
@@ -604,6 +725,23 @@ export const dashboardAPI = {
         throw new Error('Failed to fetch dashboard data');
       }
 
+      // Calculate statistics
+      const totalBUs = businessUnits.data?.length || 0;
+      const totalEmployees = employees.data?.length || 0;
+      const totalPartners = partners.data?.length || 0;
+
+      // Calculate financial stats
+      const allTransactions = transactions.data || [];
+      const totalIncome = allTransactions
+        .filter((t: any) => t.type === 'income')
+        .reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0);
+
+      const totalExpense = allTransactions
+        .filter((t: any) => t.type === 'expense')
+        .reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0);
+
+      const netProfit = totalIncome - totalExpense;
+
       return {
         success: true,
         data: {
@@ -611,6 +749,15 @@ export const dashboardAPI = {
           transactions: transactions.data,
           employees: employees.data,
           partners: partners.data,
+          stats: {
+            totalBUs,
+            totalEmployees,
+            totalPartners,
+            totalTransactions: allTransactions.length,
+            totalIncome,
+            totalExpense,
+            netProfit,
+          },
         },
       };
     } catch (error: any) {

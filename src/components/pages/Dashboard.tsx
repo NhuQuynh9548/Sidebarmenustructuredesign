@@ -1,10 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Percent, Eye, X, BarChart3, Filter, Calendar } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useApp } from '../../contexts/AppContext';
+import { dashboardAPI } from '../../services/supabaseApi';
 
 export function Dashboard() {
   const { selectedBU, canSelectBU, currentUser } = useApp();
+
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load real data from database
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setLoading(true);
+      try {
+        const result = await dashboardAPI.getData();
+        if (result.success) {
+          setDashboardData(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
   
   const [selectedBUForModal, setSelectedBUForModal] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
